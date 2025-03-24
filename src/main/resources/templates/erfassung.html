@@ -1,0 +1,82 @@
+<!-- efassung.html -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Anwesenheitserfassung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .navbar {
+            background-color: #333;
+            padding: 10px;
+            text-align: center;
+        }
+        .navbar a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .navbar a:hover {
+            color: #4CAF50;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: center;
+        }
+        .container h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .container button {
+            width: 100%;
+            padding: 10px;
+            background-color: #0056b3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .container button:hover {
+            background-color: #004080;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="erfassung.html">Anwesenheit</a>
+        <a href="ubersicht.html">Übersicht</a>
+        <a href="search.html">Suche</a>
+    </nav>
+    <div class="container">
+        <h1>Anwesenheitserfassung</h1>
+        <select>
+            <option>Gruppe A</option>
+            <option>Gruppe B</option>
+        </select>
+        <table>
+            <tr><th>Datum</th><th>Status</th><th>Kommentar</th></tr>
+            <tr th:each="erfassung : ${erfassungen}">
+                <td th:text="${erfassung.datum}"></td>
+                <td th:text="${erfassung.status.bezeichnung}"></td>
+                <td th:text="${erfassung.kommentar}"></td>
+            </tr>
+        </table>
+
+        <button>Speichern</button>
+    </div>
+</body>
+</html>

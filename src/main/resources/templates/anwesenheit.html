@@ -1,39 +1,100 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>Anwesenheit erfassen</title>
+  <title>Anwesenheitserfassung</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
-<body class="container">
-<h2>Anwesenheit erfassen für Gruppe: <span th:text="${gruppe.bezeichnung}"></span></h2>
+
+<body class="container mt-4">
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <a class="navbar-brand" href="#">Navbar</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item active">
+        <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Link</a>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          Dropdown
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+          <a class="dropdown-item" href="#">Action</a>
+          <a class="dropdown-item" href="#">Another action</a>
+          <div class="dropdown-divider"></div>
+          <a class="dropdown-item" href="#">Something else here</a>
+        </div>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link disabled" href="#">Disabled</a>
+      </li>
+    </ul>
+    <form class="form-inline my-2 my-lg-0">
+      <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search">
+      <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
+    </form>
+  </div>
+</nav>
+
+
+<h2>Anwesenheitserfassung für Gruppe: <span th:text="${gruppe.bezeichnung}"></span></h2>
+<p>Heutiges Datum: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}"></span></p>
 
 <form action="/anwesenheit/speichern" method="post">
-  <table class="table">
+  <table class="table table-bordered">
     <thead>
     <tr>
       <th>Name</th>
       <th>Status</th>
+      <th>Ankunftszeit</th>
+      <th>Verlassen um</th>
       <th>Kommentar</th>
     </tr>
     </thead>
     <tbody>
-    <tr th:each="student, i : ${studentenListe}">
+    <tr th:each="student : ${studentenListe}">
       <td>
         <input type="hidden" name="studentenId" th:value="${student.id}" />
         <span th:text="${student.vorname} + ' ' + ${student.name}"></span>
       </td>
       <td>
-        <select name="status" class="form-select">
-          <option th:each="status : ${statusListe}" th:value="${status.id}" th:text="${status.bezeichnung}"></option>
-        </select>
+        <div class="form-check">
+          <!-- Radio Buttons für verschiedene Status -->
+          <div th:each="status : ${statusListe}">
+            <input class="form-check-input" type="radio"
+                   th:name="'status_' + ${student.id}"
+                   th:value="${status.id}"
+                   th:id="'status_' + ${student.id} + '_' + ${status.id}"
+                   th:text="${status.bezeichnung}" />
+          </div>
+        </div>
       </td>
       <td>
-        <input type="text" name="kommentar" class="form-control" />
+        <!-- Ankunftszeit -->
+        <input type="time" name="ankunftszeit_${student.id}" class="form-control" placeholder="Ankunftszeit" />
+      </td>
+      <td>
+        <!-- Verlassen um -->
+        <input type="time" name="verlassen_um_${student.id}" class="form-control" placeholder="Verlassen um" />
+      </td>
+      <td>
+        <!-- Kommentar -->
+        <input type="text" name="kommentar_${student.id}" class="form-control" placeholder="Kommentar (optional)" />
       </td>
     </tr>
     </tbody>
   </table>
+
   <button type="submit" class="btn btn-success">Speichern</button>
 </form>
+
+<a href="/gruppen/übersicht" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</a>
+
 </body>
 </html>

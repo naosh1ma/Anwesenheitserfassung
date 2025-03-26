@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Statistik für <span th:text="${student.vorname} + ' ' + ${student.name}"></span></title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+</head>
+<body class="container mt-5">
+<h2>Statistik für <span th:text="${student.vorname} + ' ' + ${student.name}"></span></h2>
+
+<table class="table mt-3">
+    <thead>
+    <tr>
+        <th>Gesamtanwesenheit (%)</th>
+        <th>Anzahl Entschuldigte Fehlzeiten</th>
+        <th>Anzahl Unentschuldigte Fehlzeiten</th>
+        <th>Anzahl Krankmeldungen</th>
+        <th>Anzahl Verspätungen</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td th:text="${statistik.gesamtAnwesenheit}"></td>
+        <td th:text="${statistik.anzahlEntschuldigt}"></td>
+        <td th:text="${statistik.anzahlUnentschuldigt}"></td>
+        <td th:text="${statistik.anzahlKrank}"></td>
+        <td th:text="${statistik.anzahlVerspaetung}"></td>
+    </tr>
+    </tbody>
+</table>
+
+<a href="/anwesenheitsliste" class="btn btn-secondary">Zurück zur Anwesenheitsübersicht</a>
+</body>
+</html>

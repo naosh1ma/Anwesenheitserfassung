@@ -25,14 +25,14 @@
 
 <ul class="group-list">
     <!-- Thymeleaf Schleife, die über alle Gruppen geht und sie anzeigt -->
-    <li th:each="gruppe : ${gruppenListAttribut}" class="group-item">
+    <li th:each="gruppe : ${gruppenListe}" class="group-item">
         <span th:text="${gruppe.bezeichnung}">[Gruppenname]
             </span>
     </li>
 </ul>
 
 <!-- Wenn keine Gruppen vorhanden sind, wird eine Warnung angezeigt -->
-<p th:if="${gruppenListAttribut.size() == 0}" style="color: red;">⚠️ Keine Gruppen gefunden!</p>
+<p th:if="${gruppenListe.size() == 0}" style="color: red;">⚠️ Keine Gruppen gefunden!</p>
 
 <form th:action="@{/login}" method="post">
     <button type="submit">Logout</button>

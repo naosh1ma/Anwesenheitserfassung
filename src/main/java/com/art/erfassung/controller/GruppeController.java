@@ -21,11 +21,10 @@ public class GruppeController {
         this.gruppeDao = gruppeDao;
     }
 
-    @GetMapping("/dashboard")
+    @GetMapping("/gruppen")
     public String showDashboard(Model model) {
         List<Gruppe> gruppenList = gruppeDao.findAll();
-        //gruppenList.forEach(gruppe -> System.out.println("Gefundene Gruppe: " + gruppe.getBezeichnung()));
-        model.addAttribute("gruppenListAttribut", gruppenList);
-        return "dashboard";
+        model.addAttribute("gruppenListe", gruppenList);
+        return "gruppen";
     }
 }

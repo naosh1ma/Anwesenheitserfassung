@@ -1,8 +1,8 @@
 package com.art.erfassung.controller;
 
-import com.art.erfassung.dao.StudentenDao;
-import com.art.erfassung.model.Studenten;
-import jakarta.annotation.PostConstruct;
+import com.art.erfassung.model.Erfassung;
+import com.art.erfassung.model.StudentenStatistik;
+import com.art.erfassung.repository.ErfassungRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -10,69 +10,47 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
-@RequestMapping("/anwesenheit")
+@RequestMapping("/studenten")
 public class StudentenController {
 
-    private final StudentenDao studentenDao;
-
-
-
     @Autowired
-    public StudentenController(StudentenDao studentenDao) {
-        this.studentenDao = studentenDao;
+    private ErfassungRepository erfassungRepository;
+
+    public StudentenController(ErfassungRepository erfassungRepository) {
+        this.erfassungRepository = erfassungRepository;
     }
 
-    @GetMapping
-    public String showStudents(Model model) {
-        List<Studenten> studenten = studentenDao.getAlleStudenten();
-        model.addAttribute("studenten", studenten);
-        model.addAttribute("datum", LocalDate.now()); // Heutiges Datum hinzufügen
-        return "anwesenheit-backup"; // Zeigt die anwesenheit-backup.html Seite
+    @GetMapping("/{id}")
+    public String getStudentenStatistik(@PathVariable("id") Integer studentId, Model model) {
+        // Holen der Erfassungen des Studenten
+        List<Erfassung> erfassungen = erfassungRepository.findByStudenten_id(studentId);
+
+        // Berechnung der Statistiken
+        double gesamtAnwesenheit = berechneGesamtAnwesenheit(erfassungen);
+        long anzahlEntschuldigt = erfassungen.stream().filter(e -> e.getStatus().getBezeichnung().equals("Entschuldigt")).count();
+        long anzahlUnentschuldigt = erfassungen.stream().filter(e -> e.getStatus().getBezeichnung().equals("Unentschuldigt")).count();
+        long anzahlKrank = erfassungen.stream().filter(e -> e.getStatus().getBezeichnung().equals("Krank")).count();
+        long anzahlVerspaetung = erfassungen.stream().filter(e -> e.getKommentar() != null && e.getKommentar().toLowerCase().contains("verspätung")).count();
+
+        // Berechnen der Gesamtanwesenheit in Prozent
+        long anzahlAnwesend = erfassungen.stream().filter(e -> e.getStatus().getBezeichnung().equals("Anwesend")).count();
+        long totalAnwesenheit = erfassungen.size();
+        gesamtAnwesenheit = (totalAnwesenheit > 0) ? ((double) anzahlAnwesend / totalAnwesenheit) * 100 : 0;
+
+        // Modell für die Anzeige
+        model.addAttribute("statistik", new StudentenStatistik(gesamtAnwesenheit, anzahlEntschuldigt, anzahlUnentschuldigt, anzahlKrank, anzahlVerspaetung));
+        model.addAttribute("student", erfassungen.get(0).getStudenten());
+
+        return "statistik"; // Die HTML-Seite, die du vorher erstellt hast
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    // define @PostConstruct to load the student data ... only once!
-    @PostConstruct
-    public void loadData() {
-
-        List<Studenten> theStudentens = new ArrayList<>();
-        theStudentens = new ArrayList<>();
-
-        // TODO Studenten aus DB laden
-        theStudentens.add(new Studenten());
-        theStudentens.add(new Studenten());
-        theStudentens.add(new Studenten());
-    }
-
-
-
-
-    // define endpoint for "/student/{studentId}" - return student an index
-
-    @GetMapping("/student/{studentId}")
-    public Studenten getStudent(@PathVariable int studentId) {
-        List<Studenten> theStudentens =new ArrayList<>();
-
-        return theStudentens.get(studentId);
+    private double berechneGesamtAnwesenheit(List<Erfassung> erfassungen) {
+        long anzahlAnwesend = erfassungen.stream().filter(e -> e.getStatus().getBezeichnung().equals("Anwesend")).count();
+        long totalAnwesenheit = erfassungen.size();
+        return (totalAnwesenheit > 0) ? ((double) anzahlAnwesend / totalAnwesenheit) * 100 : 0;
     }
 }
+

@@ -47,4 +47,5 @@ public class Erfassung {
     public void setDatum(LocalDate datum) {this.datum = datum;}
     public void setStatus(Status status) {this.status = status;}
     public void setKommentar(String kommentar) {this.kommentar = kommentar;}
+
 }

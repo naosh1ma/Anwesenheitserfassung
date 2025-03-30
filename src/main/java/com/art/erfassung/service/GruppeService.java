@@ -1,4 +1,4 @@
-package com.art.erfassung.dao;
+package com.art.erfassung.service;
 
 import com.art.erfassung.model.Gruppe;
 import com.art.erfassung.repository.GruppeRepository;
@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class GruppeDao {
+public class GruppeService {
 
     private final GruppeRepository gruppeRepository;
 
     @Autowired
-    public GruppeDao(GruppeRepository gruppeRepository) {
+    public GruppeService(GruppeRepository gruppeRepository) {
         this.gruppeRepository = gruppeRepository;
     }
 

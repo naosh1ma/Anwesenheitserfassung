@@ -1,4 +1,4 @@
-package com.art.erfassung.dao;
+package com.art.erfassung.service;
 
 import com.art.erfassung.model.Studenten;
 import com.art.erfassung.repository.StudentenRepository;
@@ -8,12 +8,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class StudentenDao {
+public class StudentenService {
 
     private final StudentenRepository studentenRepository;
 
     @Autowired
-    public StudentenDao(StudentenRepository studentenRepository) {
+    public StudentenService(StudentenRepository studentenRepository) {
         this.studentenRepository = studentenRepository;
     }
 

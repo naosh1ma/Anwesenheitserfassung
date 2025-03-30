@@ -1,7 +1,7 @@
 package com.art.erfassung.controller;
 
 import com.art.erfassung.model.Gruppe;
-import com.art.erfassung.dao.GruppeDao;
+import com.art.erfassung.service.GruppeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,16 +14,16 @@ import java.util.List;
 @RequestMapping // Alle Methoden in dieser Klasse betreffen "/dashboard"
 public class GruppeController {
 
-    private final GruppeDao gruppeDao;
+    private final GruppeService gruppeService;
 
     @Autowired
-    public GruppeController(GruppeDao gruppeDao) {
-        this.gruppeDao = gruppeDao;
+    public GruppeController(GruppeService gruppeService) {
+        this.gruppeService = gruppeService;
     }
 
     @GetMapping("/gruppen")
     public String showDashboard(Model model) {
-        List<Gruppe> gruppenList = gruppeDao.findAll();
+        List<Gruppe> gruppenList = gruppeService.findAll();
         model.addAttribute("gruppenListe", gruppenList);
         return "gruppen";
     }

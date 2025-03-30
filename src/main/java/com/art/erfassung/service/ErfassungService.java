@@ -1,4 +1,4 @@
-package com.art.erfassung.dao;
+package com.art.erfassung.service;
 
 import com.art.erfassung.model.Erfassung;
 import com.art.erfassung.repository.ErfassungRepository;
@@ -7,12 +7,12 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class ErfassungDao {
+public class ErfassungService {
 
     private final ErfassungRepository erfassungRepository;
 
 
-    public ErfassungDao(ErfassungRepository erfassungRepository) {
+    public ErfassungService(ErfassungRepository erfassungRepository) {
         this.erfassungRepository = erfassungRepository;
     }
 

@@ -58,34 +58,27 @@
     </tr>
     </thead>
     <tbody>
-    <tr th:each="student : ${studentenListe}">
+    <tr th:each="student, iter : ${studentenListe}">
       <td>
         <input type="hidden" name="studentenId" th:value="${student.id}" />
         <span th:text="${student.vorname} + ' ' + ${student.name}"></span>
       </td>
       <td>
-        <div class="form-check">
-          <!-- Radio Buttons für verschiedene Status -->
-          <div th:each="status : ${statusListe}">
-            <input class="form-check-input" type="radio"
-                   th:name="'status_' + ${student.id}"
-                   th:value="${status.id}"
-                   th:id="'status_' + ${student.id} + '_' + ${status.id}"
-                   th:text="${status.bezeichnung}" />
-          </div>
-        </div>
+        <select class="form-select" name="status" required>
+          <option th:each="status : ${statusListe}"
+                  th:value="${status.id}"
+                  th:text="${status.bezeichnung}">
+          </option>
+        </select>
       </td>
       <td>
-        <!-- Ankunftszeit -->
-        <input type="time" name="ankunftszeit_${student.id}" class="form-control" placeholder="Ankunftszeit" />
+        <input type="time" name="ankunftszeit" class="form-control" />
       </td>
       <td>
-        <!-- Verlassen um -->
-        <input type="time" name="verlassen_um_${student.id}" class="form-control" placeholder="Verlassen um" />
+        <input type="time" name="verlassen_um" class="form-control" />
       </td>
       <td>
-        <!-- Kommentar -->
-        <input type="text" name="kommentar_${student.id}" class="form-control" placeholder="Kommentar (optional)" />
+        <input type="text" name="kommentar" class="form-control" placeholder="Kommentar (optional)" />
       </td>
     </tr>
     </tbody>
@@ -94,7 +87,7 @@
   <button type="submit" class="btn btn-success">Speichern</button>
 </form>
 
-<a href="/gruppen/übersicht" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</a>
+<a href="/gruppen" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</a>
 
 </body>
 </html>

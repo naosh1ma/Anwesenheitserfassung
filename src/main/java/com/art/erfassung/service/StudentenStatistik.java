@@ -1,4 +1,4 @@
-package com.art.erfassung.model;
+package com.art.erfassung.service;
 
 public class StudentenStatistik {
 

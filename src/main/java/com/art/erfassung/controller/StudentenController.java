@@ -1,7 +1,7 @@
 package com.art.erfassung.controller;
 
 import com.art.erfassung.model.Erfassung;
-import com.art.erfassung.model.StudentenStatistik;
+import com.art.erfassung.service.StudentenStatistik;
 import com.art.erfassung.repository.ErfassungRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;

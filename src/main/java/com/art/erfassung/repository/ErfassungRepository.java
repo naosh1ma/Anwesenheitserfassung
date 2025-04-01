@@ -25,4 +25,5 @@ public interface ErfassungRepository extends JpaRepository<Erfassung, Integer> {
 
 
     Optional<Erfassung> findByStudenten_IdAndDatum(Integer studentId, LocalDate datum);
+
 }

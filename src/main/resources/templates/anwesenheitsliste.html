@@ -10,24 +10,30 @@
             height: 20px;
             border-radius: 10%; /* Macht es zu einem Kreis */
         }
+
         .status-anwesend {
             background-color: green;
         }
+
         .status-entschuldigt {
             background-color: orange;
         }
+
         .status-unentschuldigt {
             background-color: red;
         }
+
         .status-krank {
-            background-color: blue;
+            background-color: dodgerblue;
         }
+
         .no-underline {
-            color: black;  /* Setzt die Farbe auf schwarz */
-            text-decoration: none;  /* Entfernt den Unterstrich */
+            color: black; /* Setzt die Farbe auf schwarz */
+            text-decoration: none; /* Entfernt den Unterstrich */
         }
+
         .no-underline:hover {
-            color: darkgray;  /* Optional: Ändere die Farbe bei Hover */
+            color: darkgray; /* Optional: Ändere die Farbe bei Hover */
         }
 
     </style>
@@ -50,16 +56,20 @@
     </thead>
     <tbody>
     <tr th:each="student : ${studenten}">
-        <td><a class="no-underline" th:href="@{/studenten/{id}/statistik(id=${student.id})}" th:text="${student.vorname} + ' ' + ${student.name}"></a></td>
+        <td><a class="no-underline" th:href="@{/studenten/{id}/statistik(id=${student.id})}"
+               th:text="${student.vorname} + ' ' + ${student.name}"></a></td>
         <td th:each="tag : ${#numbers.sequence(1, tageImMonat)}">
             <span th:each="erfassung : ${erfassungen}"
-                  th:if="${erfassung.studenten.id eq student.id and erfassung.datum?.dayOfMonth eq tag}"
+                  th:if="${erfassung.studenten.id == student.id and erfassung.datum?.dayOfMonth == tag}"
                   class="status-indicator"
-                  th:classappend="${erfassung.status.bezeichnung == 'Anwesend'} ? 'status-anwesend' :
-                                  (${erfassung.status.bezeichnung == 'Entschuldigt'} ? 'status-entschuldigt' :
-                                  (${erfassung.status.bezeichnung == 'Unentschuldigt'} ? 'status-unentschuldigt' :
-                                  (${erfassung.status.bezeichnung == 'Krank'} ? 'status-krank' : '')))">
-            </span>
+                  th:classappend="
+        ${erfassung.status.bezeichnung == 'Anwesend'} ? ' status-anwesend' :
+        (${erfassung.status.bezeichnung == 'Entschuldigt'} ? ' status-entschuldigt' :
+        (${erfassung.status.bezeichnung == 'Unentschuldigt'} ? ' status-unentschuldigt' :
+        (${erfassung.status.bezeichnung == 'Krankmeldung'} ? ' status-krank' : '')))
+      ">
+</span>
+
         </td>
     </tr>
     </tbody>

@@ -55,17 +55,44 @@ public class ErfassungController {
                                        @RequestParam("status") List<Integer> statusIds,
                                        @RequestParam("kommentar") List<String> kommentare) {
 
+        if (studentenIds.size() != statusIds.size() || studentenIds.size() != kommentare.size()) {
+            throw new IllegalArgumentException("Liste-Gr��en stimmen nicht �berein");
+        }
+
         LocalDate datum = LocalDate.now();
+        Integer gruppeId = null;
+
         for (int i = 0; i < studentenIds.size(); i++) {
-            Studenten student = studentenRepository.findById(studentenIds.get(i)).orElse(null);
-            Status status = statusRepository.findById(statusIds.get(i)).orElse(null);
+            Optional<Studenten> optionalStudent = studentenRepository.findById(studentenIds.get(i));
+            Optional<Status> optionalStatus = statusRepository.findById(statusIds.get(i));
+
+            if (optionalStudent.isEmpty() || optionalStatus.isEmpty()) {
+                continue;
+            }
+
+            Studenten student = optionalStudent.get();
+            Status status = optionalStatus.get();
             String kommentar = kommentare.get(i);
-            if (student != null && status != null) {
-                Erfassung erfassung = new Erfassung(student, datum, status, kommentar);
+
+            gruppeId = student.getGruppe().getId();
+
+            // Check if already exists for date
+            Optional<Erfassung> existing = erfassungRepository.findByStudenten_IdAndDatum(student.getId(), datum);
+            if (existing.isPresent()) {
+                Erfassung erfassung = existing.get();
+                erfassung.setStatus(status);
+                erfassung.setKommentar(kommentar);
                 erfassungRepository.save(erfassung);
+            } else {
+                Erfassung neueErfassung = new Erfassung(student, datum, status, kommentar);
+                erfassungRepository.save(neueErfassung);
             }
         }
-        return "redirect:/anwesenheit/" + studentenIds.get(0); // Zurück zur Gruppe
+
+        if (gruppeId != null) {
+            return "redirect:/anwesenheit/" + gruppeId;
+        }
+        return "redirect:/gruppen"; // Zurück zur Gruppe
     }
 
 //    @GetMapping("/liste/{gruppenId}")

@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Statistik für <span th:text="${student.vorname} + ' ' + ${student.name}"></span></title>
+    <title th:if="${statistik.student() != null}"
+           th:text="|Statistik für ${statistik.student.vorname} ${statistik.student.name}|">
+        Statistik
+    </title>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body class="container mt-5">
-<h2>Statistik für <span th:text="${student.vorname} + ' ' + ${student.name}"></span></h2>
+
+<h2 th:if="${statistik.student() != null}"
+    th:text="|Statistik für ${statistik.student.vorname} ${statistik.student.name}|">
+    Statistik
+</h2>
 
 <table class="table mt-3">
     <thead>
@@ -19,11 +26,11 @@
     </thead>
     <tbody>
     <tr>
-        <td th:text="${statistik.gesamtAnwesenheit}"></td>
-        <td th:text="${statistik.anzahlEntschuldigt}"></td>
-        <td th:text="${statistik.anzahlUnentschuldigt}"></td>
-        <td th:text="${statistik.anzahlKrank}"></td>
-        <td th:text="${statistik.anzahlVerspaetung}"></td>
+        <td th:text="${statistik.gesamtAnwesenheit()}"></td>
+        <td th:text="${statistik.entschuldigt()}"></td>
+        <td th:text="${statistik.unentschuldigt()}"></td>
+        <td th:text="${statistik.krank()}"></td>
+        <td th:text="${statistik.verspaetungen()}"></td>
     </tr>
     </tbody>
 </table>
@@ -31,3 +38,4 @@
 <a href="/anwesenheitsliste" class="btn btn-secondary">Zurück zur Anwesenheitsübersicht</a>
 </body>
 </html>
+

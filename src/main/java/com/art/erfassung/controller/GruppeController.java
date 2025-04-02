@@ -21,7 +21,7 @@ public class GruppeController {
         this.gruppeService = gruppeService;
     }
 
-    @GetMapping("/gruppen")
+    @GetMapping("/gruppe")
     public String showDashboard(Model model) {
         List<Gruppe> gruppenList = gruppeService.findAll();
         model.addAttribute("gruppenListe", gruppenList);

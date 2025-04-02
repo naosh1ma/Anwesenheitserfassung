@@ -56,7 +56,7 @@
     </thead>
     <tbody>
     <tr th:each="student : ${studenten}">
-        <td><a class="no-underline" th:href="@{/studenten/{id}/statistik(id=${student.id})}"
+        <td><a class="no-underline" th:href="@{/studenten/{id}(id=${student.id})}"
                th:text="${student.vorname} + ' ' + ${student.name}"></a></td>
         <td th:each="tag : ${#numbers.sequence(1, tageImMonat)}">
             <span th:each="erfassung : ${erfassungen}"

@@ -60,11 +60,11 @@
     <tbody>
     <tr th:each="student, iter : ${studentenListe}">
       <td>
-        <input type="hidden" name="studentenId" th:value="${student.id}" />
+        <input type="hidden" name="studentenIdFront" th:value="${student.id}" />
         <span th:text="${student.vorname} + ' ' + ${student.name}"></span>
       </td>
       <td>
-        <select class="form-select" name="status" required>
+        <select class="form-select" name="statusFront" required>
           <option th:each="status : ${statusListe}"
                   th:value="${status.id}"
                   th:text="${status.bezeichnung}">
@@ -78,7 +78,7 @@
         <input type="time" name="verlassen_um" class="form-control" />
       </td>
       <td>
-        <input type="text" name="kommentar" class="form-control" placeholder="Kommentar (optional)" />
+        <input type="text" name="kommentarFront" class="form-control" placeholder="Kommentar (optional)" />
       </td>
     </tr>
     </tbody>

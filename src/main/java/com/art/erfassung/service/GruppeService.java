@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class GruppeService {
@@ -17,7 +18,11 @@ public class GruppeService {
         this.gruppeRepository = gruppeRepository;
     }
 
+    public Gruppe findOrThrow(Integer id) {
+        return gruppeRepository.findById(id).orElseThrow();
+    }
+
     public List<Gruppe> findAll() {
-        return gruppeRepository.findAll(); // Holt alle Gruppen aus der Datenbank
+        return gruppeRepository.findAll();
     }
 }

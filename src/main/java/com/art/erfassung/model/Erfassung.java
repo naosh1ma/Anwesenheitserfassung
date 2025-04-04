@@ -1,10 +1,16 @@
 package com.art.erfassung.model;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDate;
 
-
+/**
+ * Entität zur Darstellung einer Erfassung.
+ * <p>
+ * Diese Klasse bildet die Tabelle "erfassung" in der Datenbank ab. Sie speichert Informationen
+ * zu einer Erfassung, die einem Studenten an einem bestimmten Datum zugeordnet ist und einen
+ * bestimmten Status sowie einen optionalen Kommentar beinhaltet.
+ * </p>
+ */
 @Entity
 @Table(name = "erfassung")
 public class Erfassung {

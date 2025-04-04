@@ -2,6 +2,13 @@ package com.art.erfassung.model;
 
 import jakarta.persistence.*;
 
+/**
+ * Entität zur Darstellung eines Status.
+ * <p>
+ * Diese Klasse bildet die Tabelle "status" in der Datenbank ab. Ein Status kann
+ * verschiedene Zustände repräsentieren, beispielsweise "Anwesend", "Krank" oder "Entschuldigt".
+ * </p>
+ */
 @Entity
 @Table(name="status")
 public class Status {

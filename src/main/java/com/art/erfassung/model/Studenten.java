@@ -2,6 +2,13 @@ package com.art.erfassung.model;
 
 import jakarta.persistence.*;
 
+/**
+ * Entität zur Darstellung eines Studenten.
+ * <p>
+ * Diese Klasse bildet die Tabelle "studenten" in der Datenbank ab und speichert
+ * grundlegende Informationen über einen Studenten, wie Name, Vorname und die zugehörige Gruppe.
+ * </p>
+ */
 @Entity
 @Table(name="studenten")
 public class Studenten {

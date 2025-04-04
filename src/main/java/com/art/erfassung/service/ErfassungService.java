@@ -78,16 +78,6 @@ public class ErfassungService {
     }
 
     /**
-     * Speichert eine neue oder aktualisierte Erfassung.
-     *
-     * @param erfassung das {@link Erfassung} Objekt, das gespeichert werden soll.
-     */
-    public void save(Erfassung erfassung) {
-        // Speichern der Erfassung im Repository
-        erfassungRepository.save(erfassung);
-    }
-
-    /**
      * Sucht eine Erfassung anhand der Studenten-ID und eines bestimmten Datums.
      *
      * @param studentId die ID des Studenten, dessen Erfassung gesucht wird.
@@ -110,5 +100,29 @@ public class ErfassungService {
     public Optional<Erfassung> findById(Integer id) {
         // Abrufen der Erfassung anhand der ID
         return erfassungRepository.findById(id);
+    }
+
+    /**
+     * Speichert eine neue oder aktualisierte Erfassung.
+     *
+     * @param erfassung das {@link Erfassung} Objekt, das gespeichert werden soll.
+     */
+    public void save(Erfassung erfassung) {
+        // Speichern der Erfassung im Repository
+        erfassungRepository.save(erfassung);
+    }
+
+    /**
+     * Speichert alle übergebenen Erfassungen in der Datenbank.
+     * <p>
+     * Diese Methode nutzt die Batch-Funktionalität von {@link ErfassungRepository}
+     * um mehrere Erfassungen in einem einzigen Aufruf zu persistieren. Dadurch werden
+     * Datenbankzugriffe reduziert und die Performance verbessert, sofern Hibernate entsprechend konfiguriert ist.
+     * </p>
+     *
+     * @param erfassungenToSave die Liste der {@link Erfassung} Objekte, die gespeichert werden sollen
+     */
+    public void saveAll(List<Erfassung> erfassungenToSave) {
+        erfassungRepository.saveAll(erfassungenToSave);
     }
 }

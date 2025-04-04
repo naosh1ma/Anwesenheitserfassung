@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -108,29 +109,33 @@ public class ErfassungController {
         LocalDate datum = LocalDate.now();
         // Variable zur Speicherung der Gruppen-ID (wird anhand des ersten Studenten ermittelt)
         Integer gruppeId = null;
-        // Iteration über alle Studenten-IDs, um die entsprechenden Erfassungen zu verarbeiten
+        // Liste zur Sammlung aller zu speichernden Erfassungen (Batch-Verarbeitung)
+        List<Erfassung> erfassungenToSave = new ArrayList<>();
+        // Verarbeitung jedes Eintrags
         for (int i = 0; i < studentenIds.size(); i++) {
-            // Laden des Studenten anhand der ID; wirft eine Exception, falls nicht gefunden
+            // Laden des Studenten anhand der ID; wirft eine Exception, wenn der Student nicht gefunden wird
             Studenten student = studentenService.findOrThrow(studentenIds.get(i));
-            // Laden des Status anhand der ID; wirft eine Exception, falls nicht gefunden
+            // Laden des Status anhand der ID; wirft eine Exception, wenn der Status nicht gefunden wird
             Status status = statusService.findOrThrow(statusIds.get(i));
-            // Kommentar für die Erfassung aus der Liste entnehmen
             String kommentar = kommentare.get(i);
-            // Speichern der Gruppen-ID, basierend auf dem Studenten (alle Studenten gehören derselben Gruppe)
+            // Bestimmen der Gruppen-ID anhand des Studenten (alle Einträge sollten derselben Gruppe angehören)
             gruppeId = student.getGruppe().getId();
-            // Überprüfen, ob für den aktuellen Tag bereits eine Erfassung für den Studenten existiert.
-            // Falls ja, wird diese aktualisiert, ansonsten wird eine neue Erfassung erstellt.
+            // Überprüfen, ob für den aktuellen Tag bereits eine Erfassung existiert, und diese gegebenenfalls aktualisieren
             Erfassung erfassung = erfassungService.findByStudentAndDate(student.getId(), datum)
                     .map(e -> {
-                        // Aktualisieren des Status und Kommentars der vorhandenen Erfassung
                         e.setStatus(status);
                         e.setKommentar(kommentar);
                         return e;
-                    }).orElseGet(() -> new Erfassung(student, datum, status, kommentar));
-            // Speichern der Erfassung
-            erfassungService.save(erfassung);
+                    })
+                    .orElseGet(() -> new Erfassung(student, datum, status, kommentar));
+            // Hinzufügen der Erfassung zur Batch-Liste
+            erfassungenToSave.add(erfassung);
         }
-        // Weiterleitung zur entsprechenden Seite basierend auf der ermittelten Gruppen-ID
+
+        // Speichern aller Erfassungen in einem Batch-Vorgang
+        erfassungService.saveAll(erfassungenToSave);
+
+        // Weiterleitung basierend auf der Gruppen-ID oder zu den Gruppen, falls keine Gruppen-ID ermittelt wurde
         return (gruppeId != null) ? "redirect:/anwesenheit/" + gruppeId : "redirect:/gruppen";
     }
 }

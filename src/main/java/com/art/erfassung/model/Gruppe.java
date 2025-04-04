@@ -2,6 +2,14 @@ package com.art.erfassung.model;
 
 import jakarta.persistence.*;
 
+/**
+ * Entität zur Darstellung einer Gruppe.
+ * <p>
+ * Diese Klasse repräsentiert eine Gruppe in der Datenbank, welche über einen
+ * eindeutigen Identifikator und eine Bezeichnung verfügt. Sie wird mittels JPA
+ * zur Persistierung der Gruppendaten verwendet.
+ * </p>
+ */
 @Entity
 @Table(name="gruppe")
 public class Gruppe {

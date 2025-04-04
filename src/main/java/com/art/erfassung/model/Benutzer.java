@@ -2,6 +2,13 @@ package com.art.erfassung.model;
 
 import jakarta.persistence.*;
 
+/**
+ * Entität zur Repräsentation eines Benutzers.
+ * <p>
+ * Diese Klasse bildet die Tabelle "benutzer" in der Datenbank ab und enthält
+ * grundlegende Informationen zum Benutzer, wie Benutzernamen, Passwort, Nachname und Vorname.
+ * </p>
+ */
 @Entity
 @Table(name = "benutzer")
 public class Benutzer {

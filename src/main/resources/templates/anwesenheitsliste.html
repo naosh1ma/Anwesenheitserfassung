@@ -3,40 +3,6 @@
 <head>
     <title>Anwesenheitsübersicht</title>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
-    <style>
-        .status-indicator {
-            display: inline-block;
-            width: 20px; /* Größe des Kreises */
-            height: 20px;
-            border-radius: 10%; /* Macht es zu einem Kreis */
-        }
-
-        .status-anwesend {
-            background-color: green;
-        }
-
-        .status-entschuldigt {
-            background-color: orange;
-        }
-
-        .status-unentschuldigt {
-            background-color: red;
-        }
-
-        .status-krank {
-            background-color: dodgerblue;
-        }
-
-        .no-underline {
-            color: black; /* Setzt die Farbe auf schwarz */
-            text-decoration: none; /* Entfernt den Unterstrich */
-        }
-
-        .no-underline:hover {
-            color: darkgray; /* Optional: Ändere die Farbe bei Hover */
-        }
-
-    </style>
 </head>
 <body class="container">
 <h2>Anwesenheit für <span th:text="${gruppe.bezeichnung}"></span></h2>

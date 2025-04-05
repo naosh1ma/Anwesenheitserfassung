@@ -44,7 +44,7 @@ public class GruppeController {
      * @param model das Model, das die Daten für die View enthält
      * @return den Namen der View "gruppen"
      */
-    @GetMapping("/gruppe")
+    @GetMapping("/gruppen")
     public String showDashboard(Model model) {
         // Abrufen der Liste aller Gruppen
         List<Gruppe> gruppenList = gruppeService.findAll();

@@ -5,27 +5,23 @@
   <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 
-<body class="container mt-4">
 <nav class="navbar">
-  <div class="navbar-container container">
-    <input type="checkbox" name="" id="">
-    <div class="hamburger-lines">
-      <span class="line line1"></span>
-      <span class="line line2"></span>
-      <span class="line line3"></span>
+  <div class="navbar-container">
+    <div class="logo">
+      <a href="#" class="navbar-logo">
+        <img th:src="@{/images/logo.png}" alt="logo"/>
+      </a>
     </div>
-    <ul class="menu-items">
-      <li><a href="#">Home</a></li>
-      <li><a href="#">About</a></li>
-      <li><a href="#">Category</a></li>
-      <li><a href="#">Menu</a></li>
-      <li><a href="#">Testimonial</a></li>
-      <li><a href="#">Contact</a></li>
+    <ul class="menu">
+      <li><a th:href="@{/willkommen}">Startseite</a></li>
+      <li><a th:href="@{/gruppen}">Gruppen</a></li>
+      <li><a th:href="@{/anwesenheitl}">Erfassung</a></li>
+      <li><a th:href="@{/anwesenheitsliste}">Kursübersicht</a></li>
     </ul>
-    <h1 class="logo">Navbar</h1>
   </div>
 </nav>
 
+<div class="content container mt-4">
 <h2>Anwesenheitserfassung für Gruppe: <span th:text="${gruppe.bezeichnung}"></span></h2>
 <p>Heutiges Datum: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}"></span></p>
 
@@ -71,6 +67,6 @@
 </form>
 
 <a href="/gruppen" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</a>
-
+</div>
 </body>
 </html>

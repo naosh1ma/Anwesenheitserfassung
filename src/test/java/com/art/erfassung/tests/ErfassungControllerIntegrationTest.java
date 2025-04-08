@@ -11,14 +11,19 @@ import com.art.erfassung.service.StudentenService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import java.util.Arrays;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 @WebMvcTest(ErfassungController.class)
+@Import(MockConfig.class)
 public class ErfassungControllerIntegrationTest {
-
+    //...
     @Autowired
     private MockMvc mockMvc;
 
@@ -45,7 +50,6 @@ public class ErfassungControllerIntegrationTest {
         student1.setId(100);
         student1.setVorname("Max");
         student1.setName("Mustermann");
-        // Annahme: Gruppe zuweisen
         student1.setGruppe(gruppe);
 
         Status status = new Status();
@@ -64,14 +68,5 @@ public class ErfassungControllerIntegrationTest {
                 .andExpect(model().attributeExists("statusListe"))
                 .andExpect(model().attributeExists("gruppe"))
                 .andExpect(view().name("anwesenheit"));
-    }
-
-
-    public ErfassungService getErfassungService() {
-        return erfassungService;
-    }
-
-    public void setErfassungService(ErfassungService erfassungService) {
-        this.erfassungService = erfassungService;
     }
 }

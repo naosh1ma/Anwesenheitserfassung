@@ -21,16 +21,16 @@ public class ErfassungRepositoryTest {
     @Test
     public void testFindByStudenten_id() {
         // Erstelle und persistiere ggf. einen Dummy-Studenten und zugehörige Erfassung
-        Studenten student = new Studenten();
+        Studenten studenten = new Studenten();
         // Hier musst du die Felder des Studenten setzen und den Studenten persistieren, z.B. mit TestEntityManager.
         // Für dieses Beispiel gehen wir davon aus, dass es bereits in der Test-Datenbank existiert.
 
         // Erstelle eine Erfassung für diesen Studenten
-        Erfassung erfassung = new Erfassung(student, LocalDate.now(), /*dummy Status*/ null, "Kommentar");
+        Erfassung erfassung = new Erfassung(studenten, LocalDate.now(), /*dummy Status*/ null, "Kommentar");
         erfassungRepository.save(erfassung);
 
         // Führe die Methode aus
-        List<Erfassung> result = erfassungRepository.findByStudenten_id(student.getId());
+        List<Erfassung> result = erfassungRepository.findByStudenten_id(studenten.getId());
         // Überprüfe, ob die Erfassung gefunden wird
         assertThat(result).isNotEmpty();
     }

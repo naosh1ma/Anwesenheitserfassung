@@ -31,5 +31,6 @@ public class Gruppe {
     public Integer getId() { return id; }
     public String getBezeichnung() { return bezeichnung; }
 
+    public void setId(Integer id) {this.id = id;}
     public void setBezeichnung(String bezeichnung) {this.bezeichnung = bezeichnung;}
 }

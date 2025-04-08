@@ -30,5 +30,6 @@ public class Status {
     public int getId() {return id;}
     public String getBezeichnung() {return bezeichnung;}
 
+    public void setId(int id) {this.id = id;}
     public void setBezeichnung(String bezeichnung) {this.bezeichnung = bezeichnung;}
 }

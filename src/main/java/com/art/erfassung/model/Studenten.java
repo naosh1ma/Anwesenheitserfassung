@@ -40,7 +40,10 @@ public class Studenten {
     public String getVorname() {return vorname;}
     public Gruppe getGruppe() {return gruppe;}
 
+    public void setId(int id) {this.id = id;}
     public void setName(String name) {this.name = name;}
     public void setVorname(String vorname) {this.vorname = vorname;}
     public void setGruppe(Gruppe gruppeId) {this.gruppe = gruppeId;}
+
+
 }

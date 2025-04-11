@@ -4,7 +4,8 @@
   <title>Anwesenheitserfassung</title>
   <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-
+<body>
+<!-- Fixierte Navbar, etc. -->
 <nav class="navbar">
   <div class="navbar-container">
     <div class="logo">
@@ -22,51 +23,57 @@
 </nav>
 
 <div class="content container mt-4">
-<h2>Anwesenheitserfassung für Gruppe: <span th:text="${gruppe.bezeichnung}"></span></h2>
-<p>Heutiges Datum: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}"></span></p>
+  <h2 th:if="${gruppe != null}">
+    Anwesenheitserfassung für Gruppe: <span th:text="${gruppe.bezeichnung}"></span>
+  </h2>
+  <p>Heutiges Datum: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}"></span></p>
 
-<form action="/anwesenheit/speichern" method="post">
-  <table class="table table-bordered">
-    <thead>
-    <tr>
-      <th>Name</th>
-      <th>Status</th>
-      <th>Ankunftszeit</th>
-      <th>Verlassen um</th>
-      <th>Kommentar</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="student, iter : ${studentenListe}">
-      <td>
-        <input type="hidden" name="studentenIdFront" th:value="${student.id}" />
-        <span th:text="${student.vorname} + ' ' + ${student.name}"></span>
-      </td>
-      <td>
-        <select class="form-select" name="statusFront" required>
-          <option th:each="status : ${statusListe}"
-                  th:value="${status.id}"
-                  th:text="${status.bezeichnung}">
-          </option>
-        </select>
-      </td>
-      <td>
-        <input type="time" name="ankunftszeit" class="form-control" />
-      </td>
-      <td>
-        <input type="time" name="verlassen_um" class="form-control" />
-      </td>
-      <td>
-        <input type="text" name="kommentarFront" class="form-control" placeholder="Kommentar (optional)" />
-      </td>
-    </tr>
-    </tbody>
-  </table>
+  <!-- Formular mit th:object gebunden an erfassungForm -->
+  <form th:action="@{/anwesenheit/speichern}" th:object="${erfassungForm}" method="post">
+    <table class="table table-bordered">
+      <thead>
+      <tr>
+        <th>Student</th>
+        <th>Status</th>
+        <th>Ankunftszeit</th>
+        <th>Verlassen um</th>
+        <th>Kommentar</th>
+      </tr>
+      </thead>
+      <tbody>
+      <!-- Iteriere über die Liste der Anwesenheits-Einträge -->
+      <tr th:each="eintrag, iter : *{eintraege}">
+        <td>
+          <!-- Binde den Studenten-ID-Wert als Hidden-Feld -->
+          <input type="hidden" th:field="*{eintraege[__${iter.index}__].studentenId}" />
+          <!-- Zeige den Studenten-Namen an. Hier verwenden wir ein zusätzliches DTO-Feld -->
+          <span th:text="*{eintraege[__${iter.index}__].studentenName}">Student Name</span>
+        </td>
+        <td>
+          <!-- Status auswählen -->
+          <select class="form-select" th:field="*{eintraege[__${iter.index}__].statusId}" required>
+            <option th:each="status : ${statusListe}"
+                    th:value="${status.id}"
+                    th:text="${status.bezeichnung}">
+            </option>
+          </select>
+        </td>
+        <td>
+          <input type="time" class="form-control" th:field="*{eintraege[__${iter.index}__].ankunftszeit}" />
+        </td>
+        <td>
+          <input type="time" class="form-control" th:field="*{eintraege[__${iter.index}__].verlassenUm}" />
+        </td>
+        <td>
+          <input type="text" class="form-control" th:field="*{eintraege[__${iter.index}__].kommentar}" placeholder="Kommentar (optional)" />
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <button type="submit" class="btn btn-success">Speichern</button>
+  </form>
 
-  <button type="submit" class="btn btn-success">Speichern</button>
-</form>
-
-<a href="/gruppen" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</a>
+  <a href="/gruppen" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</a>
 </div>
 </body>
 </html>

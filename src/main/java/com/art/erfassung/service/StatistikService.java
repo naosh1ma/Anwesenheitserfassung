@@ -46,26 +46,23 @@ public class StatistikService {
      * @param studentId die eindeutige ID des Studenten
      * @return ein {@link StatistikErgebnis} Objekt, das die berechneten Statistiken enthält
      */
+
+
     public StatistikErgebnis berechneFuerStudent(Integer studentId) {
-        // Abrufen aller Erfassungen für den gegebenen Studenten
+
         List<Erfassung> erfassungen = erfassungRepository.findByStudenten_id(studentId);
-        // Gesamtzahl der Erfassungen
         long total = erfassungen.size();
-        // Gruppierung der Erfassungen nach Statusbezeichnung und Zählung der jeweiligen Vorkommnisse
         Map<String, Long> statusCount = erfassungen.stream()
-                .collect(Collectors.groupingBy(e -> e.getStatus().getBezeichnung(), Collectors.counting()));
-        // Ermittlung der Anzahl der Verspätungen:
-        // Filtern der Erfassungen, deren Kommentar (falls vorhanden) das Wort "verspätung" enthält.
+                .collect(Collectors.groupingBy(e -> e.getStatus().
+                        getBezeichnung(), Collectors.counting()));
+
         long verspaetet = erfassungen.stream()
-                .filter(e -> Optional.ofNullable(e.getKommentar()).orElse("").toLowerCase().contains("verspätung"))
+                .filter(e -> Optional.ofNullable(e.getKommentar()).
+                        orElse("").toLowerCase().contains("verspätung"))
                 .count();
-        // Anzahl der "Anwesend"-Einträge ermitteln, Standardwert 0 falls nicht vorhanden
         long anwesend = statusCount.getOrDefault("Anwesend", 0L);
-        // Berechnung der Anwesenheitsquote in Prozent (sicherheitsüberprüfung, um Division durch Null zu vermeiden)
         double prozent = (total > 0) ? ((double) anwesend / total * 100.0) : 0.0;
-        // Falls Erfassungen vorhanden sind, wird der zugehörige Student aus der ersten Erfassung übernommen, sonst null
-        Studenten student = erfassungen.isEmpty() ? null : erfassungen.get(0).getStudenten();
-        // Rückgabe eines neuen StatistikErgebnis-Objekts mit den berechneten Werten
+      Studenten student = erfassungen.isEmpty() ? null : erfassungen.get(0).getStudenten();
         return new StatistikErgebnis(student, prozent,
                 statusCount.getOrDefault("Entschuldigt", 0L),
                 statusCount.getOrDefault("Unentschuldigt", 0L),
@@ -79,4 +76,50 @@ public class StatistikService {
             long unentschuldigt,
             long krank,
             long verspaetungen) { }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }

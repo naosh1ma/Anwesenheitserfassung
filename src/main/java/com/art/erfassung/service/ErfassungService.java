@@ -1,12 +1,18 @@
 package com.art.erfassung.service;
 
+import com.art.erfassung.dto.AnwesenheitsDTO;
 import com.art.erfassung.model.Erfassung;
 import com.art.erfassung.model.Status;
+import com.art.erfassung.model.Studenten;
 import com.art.erfassung.repository.ErfassungRepository;
 import com.art.erfassung.repository.StatusRepository;
+import com.art.erfassung.repository.StudentenRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,17 +30,85 @@ public class ErfassungService {
     private final ErfassungRepository erfassungRepository;
     // Repository zur Verwaltung der Statusinformationen
     private final StatusRepository statusRepository;
+    // Repository zur Verwaltung der Studenten-Daten
+    private final StudentenRepository studentenRepository;
 
-    /**
-     * Konstruktor zur Initialisierung des ErfassungService mit den erforderlichen Repositories.
-     *
-     * @param erfassungRepository das Repository, das für die Erfassung von Daten zuständig ist.
-     * @param statusRepository    das Repository, das Statusdaten verwaltet.
-     */
-    public ErfassungService(ErfassungRepository erfassungRepository, StatusRepository statusRepository) {
+    private final StudentenService studentenService;
+    private final StatusService statusService;
+
+    @Autowired
+    public ErfassungService(ErfassungRepository erfassungRepository, StatusRepository statusRepository, StudentenRepository studentenRepository, StudentenService studentenService, StatusService statusService) {
         this.erfassungRepository = erfassungRepository;
         this.statusRepository = statusRepository;
+        this.studentenRepository = studentenRepository;
+        this.studentenService = studentenService;
+        this.statusService = statusService;
     }
+
+
+    /**
+     * Verarbeitet die Anwesenheitsdaten aus einer Liste von AnwesenheitsDTOs.
+     * Berechnet die Verspätung, falls vorhanden, und speichert die Erfassungen.
+     *
+     * @param dtos eine Liste der Anwesenheitsdaten als DTOs
+     * @return die Gruppen-ID, zu der die Erfassung gehört
+     */
+    public Integer processAnwesenheiten(List<AnwesenheitsDTO> dtos) {
+        LocalDate datum = LocalDate.now();
+        LocalTime expectedTime = LocalTime.of(8, 0);
+        Integer gruppeId = null;
+        List<Erfassung> erfassungenToSave = new ArrayList<>();
+
+        for (AnwesenheitsDTO dto : dtos) {
+            // Hole Studenten und Status
+            Studenten student = studentenService.findOrThrow(dto.getStudentenId());
+            Status status = statusService.findOrThrow(dto.getStatusId());
+            String kommentar = dto.getKommentar();
+            gruppeId = student.getGruppe().getId(); // Annahme: Alle Einträge gehören zur selben Gruppe
+
+            // Verspätung berechnen, wenn Ankunftszeit nach expectedTime liegt
+            LocalTime ankunftszeit = LocalTime.parse(dto.getAnkunftszeit());
+            if (ankunftszeit.isAfter(expectedTime)) {
+                long delayMinutes = ChronoUnit.MINUTES.between(expectedTime, ankunftszeit);
+                kommentar = (kommentar != null && !kommentar.isEmpty())
+                        ? kommentar + " | Verspätung: " + delayMinutes + " Minuten"
+                        : "Verspätung: " + delayMinutes + " Minuten";
+            }
+
+            final String finalKommentar = kommentar; // Final für den Lambda-Ausdruck
+            Erfassung erfassung = findByStudentAndDate(student.getId(), datum)
+                    .map(e -> {
+                        e.setStatus(status);
+                        e.setKommentar(finalKommentar);
+                        return e;
+                    })
+                    .orElseGet(() -> new Erfassung(student, datum, status, finalKommentar));
+
+            erfassungenToSave.add(erfassung);
+        }
+
+        saveAll(erfassungenToSave);
+        return gruppeId;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     /**
      * Gibt eine Liste von Erfassungen zurück, die einer bestimmten Gruppe in einem bestimmten

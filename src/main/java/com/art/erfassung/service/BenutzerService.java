@@ -17,11 +17,6 @@ public class BenutzerService {
     // Repository zur Verwaltung der Benutzerdaten
     private final BenutzerRepository benutzerRepository;
 
-    /**
-     * Konstruktor zur Initialisierung des BenutzerService mit dem benötigten Repository.
-     *
-     * @param benutzerRepository das Repository, das für den Zugriff auf Benutzerdaten zuständig ist.
-     */
     @Autowired
     public BenutzerService(BenutzerRepository benutzerRepository) {
         this.benutzerRepository = benutzerRepository;

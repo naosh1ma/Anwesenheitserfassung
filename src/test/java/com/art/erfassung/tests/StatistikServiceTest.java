@@ -28,16 +28,16 @@ public class StatistikServiceTest {
     private StatistikService statistikService;
 
     @Test
-    public void testBerechneFuerStudent_MitDaten() {
+    public void testBerechneStudentenstatistik_MitDaten() {
         Studenten student = new Studenten();
-        Status statusAnwesend = new Status();
-        statusAnwesend.setBezeichnung("Anwesend");
-        Erfassung erfassung1 = new Erfassung(student,
-                LocalDate.now(), statusAnwesend, "");
-        List<Erfassung> erfassungen = Collections.singletonList(erfassung1);
+        Status status = new Status();
+        status.setBezeichnung("Anwesend");
+        Erfassung erfassung = new Erfassung(student, LocalDate.now(), status, "Verspätung: 10 Minuten");
+        when(erfassungRepository.findByStudenten_id(anyInt())).thenReturn(List.of(erfassung));
+        List<Erfassung> erfassungen = Collections.singletonList(erfassung);
         when(erfassungRepository.findByStudenten_id(anyInt())).
                 thenReturn(erfassungen);
-        var statistik = statistikService.berechneFuerStudent(1);
+        var statistik = statistikService.berechneStudentenstatistik(1);
         assertNotNull(statistik);
         assertEquals(100.0, statistik.gesamtAnwesenheit(), 0.01);
     }

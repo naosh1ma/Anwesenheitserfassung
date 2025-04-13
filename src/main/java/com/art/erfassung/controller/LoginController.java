@@ -22,12 +22,6 @@ public class LoginController {
     // Service zur Authentifizierung von Benutzern
     private final BenutzerService benutzerService;
 
-    /**
-     * Konstruktor zur Initialisierung des LoginControllers mit den benötigten Services.
-     *
-     * @param benutzerService Service zur Authentifizierung von Benutzern
-     * @param gruppeService   (wird aktuell nicht verwendet) Service zur Verwaltung von Gruppen
-     */
     @Autowired
     public LoginController(BenutzerService benutzerService, GruppeService gruppeService) {
         this.benutzerService = benutzerService;

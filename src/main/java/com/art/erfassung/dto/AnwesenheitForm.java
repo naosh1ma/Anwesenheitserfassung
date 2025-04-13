@@ -4,17 +4,17 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import java.util.List;
 
-public class AnwesenheitsForm {
+public class AnwesenheitForm {
 
     @NotEmpty(message = "Es müssen mindestens Einträge vorhanden sein.")
     @Valid
-    private List<AnwesenheitsDTO> eintraege;
+    private List<AnwesenheitDTO> eintraege;
 
-    public List<AnwesenheitsDTO> getEintraege() {
+    public List<AnwesenheitDTO> getEintraege() {
         return eintraege;
     }
 
-    public void setEintraege(List<AnwesenheitsDTO> eintraege) {
+    public void setEintraege(List<AnwesenheitDTO> eintraege) {
         this.eintraege = eintraege;
     }
 }

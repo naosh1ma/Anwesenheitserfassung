@@ -2,7 +2,7 @@ package com.art.erfassung.dto;
 
 import jakarta.validation.constraints.NotNull;
 
-public class AnwesenheitsDTO {
+public class AnwesenheitDTO {
 
     @NotNull(message = "Studenten-ID darf nicht null sein")
     private Integer studentenId;

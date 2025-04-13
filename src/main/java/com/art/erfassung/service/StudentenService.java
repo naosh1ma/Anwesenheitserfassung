@@ -22,11 +22,6 @@ public class StudentenService {
     // Repository zur Verwaltung der Studenten-Daten
     private final StudentenRepository studentenRepository;
 
-    /**
-     * Konstruktor zur Initialisierung des StudentenService mit dem erforderlichen Repository.
-     *
-     * @param studentenRepository das Repository, das für den Zugriff auf Studenten zuständig ist.
-     */
     @Autowired
     public StudentenService(StudentenRepository studentenRepository) {
         this.studentenRepository = studentenRepository;

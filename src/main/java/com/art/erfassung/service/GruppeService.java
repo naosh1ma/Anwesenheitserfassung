@@ -22,11 +22,6 @@ public class GruppeService {
     // Repository zur Verwaltung der Gruppen-Daten
     private final GruppeRepository gruppeRepository;
 
-    /**
-     * Konstruktor zur Initialisierung des GruppeService mit dem benötigten Repository.
-     *
-     * @param gruppeRepository das Repository, das für den Datenzugriff auf Gruppen zuständig ist.
-     */
     @Autowired
     public GruppeService(GruppeRepository gruppeRepository) {
         this.gruppeRepository = gruppeRepository;

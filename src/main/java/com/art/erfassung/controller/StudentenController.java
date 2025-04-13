@@ -23,11 +23,6 @@ public class StudentenController {
     // Service zur Berechnung der Anwesenheitsstatistik.
     private final StatistikService statistikService;
 
-    /**
-     * Konstruktor zur Initialisierung des StudentenController.
-     *
-     * @param statistikService der Service, der die Statistik für einen Studenten berechnet
-     */
     @Autowired
     public StudentenController(StatistikService statistikService) {
         this.statistikService = statistikService;
@@ -49,7 +44,7 @@ public class StudentenController {
     @GetMapping("/{id}")
     public String getStatistik(@PathVariable("id") Integer studentId, Model model) {
         // Berechnet die Statistik für den angegebenen Studenten
-        var statistik = statistikService.berechneFuerStudent(studentId);
+        var statistik = statistikService.berechneStudentenstatistik(studentId);
         // Falls keine Erfassung für den Studenten gefunden wurde, wird eine Weiterleitung initiiert
         if (statistik.student() == null) {
             // Fallback, wenn keine Erfassung vorhanden ist

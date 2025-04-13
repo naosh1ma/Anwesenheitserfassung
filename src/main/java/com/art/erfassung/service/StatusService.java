@@ -21,11 +21,6 @@ public class StatusService {
     // Repository zur Verwaltung der Statusdaten
     private final StatusRepository statusRepository;
 
-    /**
-     * Konstruktor zur Initialisierung des StatusService mit dem benötigten Repository.
-     *
-     * @param statusRepository das Repository, das für den Zugriff auf Statusdaten verwendet wird.
-     */
     @Autowired
     public StatusService(StatusRepository statusRepository) {
         this.statusRepository = statusRepository;

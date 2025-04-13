@@ -23,11 +23,6 @@ public class GruppeController {
     //Service zur Verwaltung von Gruppen.
     private final GruppeService gruppeService;
 
-    /**
-     * Konstruktor zur Initialisierung des GruppeController mit dem benötigten GruppeService.
-     *
-     * @param gruppeService Service zur Verwaltung von Gruppen
-     */
     @Autowired
     public GruppeController(GruppeService gruppeService) {
         this.gruppeService = gruppeService;

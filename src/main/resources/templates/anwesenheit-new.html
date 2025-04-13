@@ -43,7 +43,7 @@
     <p>Heutiges Datum: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}"></span></p>
 
     <!-- Formularbindung an erfassungForm -->
-    <form th:action="@{/anwesenheit/speichern}" th:object="${anwesenheitForm}" method="post">
+    <form th:action="@{/anwesenheit/speichern}" th:object="${erfassungForm}" method="post">
         <table class="table table-bordered">
             <thead>
             <tr>
@@ -128,7 +128,7 @@
         </table>
         <button type="submit" class="btn btn-success">Speichern</button>
     </form>
-    <button href="/gruppen" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</button>
+    <a href="/gruppen" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</a>
 </div>
 
 <!-- JavaScript zur Umschaltung -->

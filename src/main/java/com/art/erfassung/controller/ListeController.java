@@ -31,13 +31,6 @@ public class ListeController {
     // Service zur Verwaltung der Anwesenheitsdaten (Erfassungen)
     private final ErfassungService erfassungService;
 
-    /**
-     * Konstruktor zur Initialisierung des ListeController mit den benötigten Services.
-     *
-     * @param gruppeService    Service zur Verwaltung von Gruppen
-     * @param studentenService Service zur Verwaltung von Studenten
-     * @param erfassungService  Service zur Verwaltung der Anwesenheitsdaten (Erfassungen)
-     */
     public ListeController(GruppeService gruppeService, StudentenService studentenService,
                            ErfassungService erfassungService) {
         this.gruppeService = gruppeService;
@@ -76,7 +69,7 @@ public class ListeController {
         // Ermitteln des Enddatums des Monats
         LocalDate monatEnde = monatStart.withDayOfMonth(monatStart.lengthOfMonth());
         // Abrufen der Anwesenheitsdaten (Erfassungen) für die Gruppe innerhalb des angegebenen Zeitraums
-        List<Erfassung> erfassungen = erfassungService.getByGruppeUndMonat(gruppe.getId(), monatStart, monatEnde);
+        List<Erfassung> erfassungen = erfassungService.findByGruppeUndMonat(gruppe.getId(), monatStart, monatEnde);
         // Hinzufügen der geladenen Daten zum Model, damit sie in der View verfügbar sind
         model.addAttribute("gruppe", gruppe);
         model.addAttribute("studenten", studenten);
@@ -89,30 +82,4 @@ public class ListeController {
         return "anwesenheitsliste";
     }
 
-    /**
-     * Aktualisiert einen Anwesenheitseintrag.
-     * <p>
-     * Diese Methode verarbeitet POST-Anfragen an "/liste/update/{id}".
-     * Es wird der Anwesenheitsstatus sowie der Kommentar des Eintrags aktualisiert.
-     * Anschließend wird die Gruppe des aktualisierten Eintrags ermittelt und es erfolgt eine Weiterleitung
-     * zur aktualisierten Anwesenheitsliste dieser Gruppe.
-     * </p>
-     *
-     * @param id        die ID des zu aktualisierenden Anwesenheitseintrags
-     * @param statusId  die neue Status-ID, die für den Eintrag gesetzt werden soll
-     * @param kommentar der neue Kommentar für den Eintrag
-     * @return eine Weiterleitung zur Anwesenheitsliste der Gruppe
-     */
-    @PostMapping("/update/{id}")
-    public String updateAnwesenheit(@PathVariable Integer id,
-                                    @RequestParam Integer statusId,
-                                    @RequestParam String kommentar) {
-
-        // Aktualisieren des Anwesenheitseintrags mit dem angegebenen Status und Kommentar
-        erfassungService.updateErfassung(id, statusId, kommentar);
-        // Abrufen der Gruppe, zu der der aktualisierte Eintrag gehört; wirft eine Exception, falls nicht vorhanden
-        Gruppe gruppe = erfassungService.findById(id).orElseThrow().getStudenten().getGruppe();
-        // Weiterleitung zur View der Anwesenheitsliste der Gruppe
-        return "redirect:/anwesenheitsliste/" + gruppe.getId();
-    }
 }

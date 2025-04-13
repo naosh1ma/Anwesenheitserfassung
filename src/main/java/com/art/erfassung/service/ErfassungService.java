@@ -1,6 +1,6 @@
 package com.art.erfassung.service;
 
-import com.art.erfassung.dto.AnwesenheitsDTO;
+import com.art.erfassung.dto.AnwesenheitDTO;
 import com.art.erfassung.model.Erfassung;
 import com.art.erfassung.model.Status;
 import com.art.erfassung.model.Studenten;
@@ -9,8 +9,10 @@ import com.art.erfassung.repository.StatusRepository;
 import com.art.erfassung.repository.StudentenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,35 +49,69 @@ public class ErfassungService {
 
 
     /**
-     * Verarbeitet die Anwesenheitsdaten aus einer Liste von AnwesenheitsDTOs.
-     * Berechnet die Verspätung, falls vorhanden, und speichert die Erfassungen.
+     * Verarbeitet eine Liste von AnwesenheitDTOs zur Erfassung der Anwesenheitsdaten.
+     * <p>
+     * Diese Methode führt folgende Aufgaben aus:
+     * <ul>
+     *   <li>Bestimmt das aktuelle Datum und definiert als Soll-Ankunftszeit 08:00 Uhr.</li>
+     *   <li>Iteriert über die übergebene Liste von AnwesenheitDTOs:
+     *     <ul>
+     *       <li>Lädt für jeden DTO den entsprechenden Studenten und den Status mithilfe der entsprechenden Services.</li>
+     *       <li>Setzt die Gruppen-ID anhand des Studenten – es wird angenommen, dass alle Einträge derselben Gruppe angehören.</li>
+     *       <li>Wenn der Eingabestring für die Ankunftszeit leer oder null ist, wird angenommen, dass der Student pünktlich (08:00 Uhr) erschienen ist.</li>
+     *       <li>Falls die tatsächliche Ankunftszeit später als die Soll-Ankunftszeit ist, wird die Verspätung in Minuten berechnet und in den Kommentar aufgenommen.</li>
+     *       <li>Überprüft, ob bereits eine Erfassung für den Studenten am aktuellen Datum existiert.
+     *           Falls ja, wird der bestehende Datensatz aktualisiert, ansonsten wird ein neuer Eintrag erstellt.</li>
+     *     </ul>
+     *   </li>
+     *   <li>Alle Erfassungen werden in einer Liste gesammelt und als Batch gespeichert.</li>
+     * </ul>
+     * </p>
      *
-     * @param dtos eine Liste der Anwesenheitsdaten als DTOs
-     * @return die Gruppen-ID, zu der die Erfassung gehört
+     * @param dtos Eine Liste von AnwesenheitDTOs, die die vom Benutzer eingegebenen Anwesenheitsdaten enthalten.
+     * @return Die Gruppen-ID, zu der die Anwesenheitsdatensätze gehören, oder null, falls sie nicht ermittelt werden konnte.
+     * @throws DateTimeParseException falls ein nicht-leerer Ankunftszeit-String nicht in ein {@link LocalTime} geparst werden kann.
      */
-    public Integer processAnwesenheiten(List<AnwesenheitsDTO> dtos) {
+    public Integer erfassenAnwesenheiten(List<AnwesenheitDTO> dtos) {
+        // Bestimme das aktuelle Datum
         LocalDate datum = LocalDate.now();
+        // Setze die erwartete Ankunftszeit (08:00 Uhr)
         LocalTime expectedTime = LocalTime.of(8, 0);
         Integer gruppeId = null;
+        // Liste, um alle zu speichernden Erfassungen zu sammeln (Batch-Verarbeitung)
         List<Erfassung> erfassungenToSave = new ArrayList<>();
 
-        for (AnwesenheitsDTO dto : dtos) {
-            // Hole Studenten und Status
+        for (AnwesenheitDTO dto : dtos) {
+            // Hole den Studenten, wirft eine Exception bei Nichtfinden
             Studenten student = studentenService.findOrThrow(dto.getStudentenId());
+            // Hole den Status, wirft ebenfalls eine Exception, falls nicht gefunden
             Status status = statusService.findOrThrow(dto.getStatusId());
+            // Hole den (eventuell vorhandenen) Kommentar aus dem DTO
             String kommentar = dto.getKommentar();
-            gruppeId = student.getGruppe().getId(); // Annahme: Alle Einträge gehören zur selben Gruppe
-
-            // Verspätung berechnen, wenn Ankunftszeit nach expectedTime liegt
-            LocalTime ankunftszeit = LocalTime.parse(dto.getAnkunftszeit());
+            // Annahme: Alle Einträge gehören zur selben Gruppe
+            gruppeId = student.getGruppe().getId();
+            // Überprüfe, ob die Ankunftszeit angegeben wurde. Wenn nicht, setze auf expectedTime.
+            String ankunftStr = dto.getAnkunftszeit();
+            LocalTime ankunftszeit;
+            // Wenn kein Wert eingegeben wurde, setze die Ankunftszeit auf die erwartete Zeit (pünktlich)
+            if (ankunftStr == null || ankunftStr.trim().isEmpty()) {
+                ankunftszeit = expectedTime;
+            } else {
+                // Andernfalls parsen wir den String in ein LocalTime-Objekt
+                ankunftszeit = LocalTime.parse(ankunftStr);
+            }
+            // Berechne die Verspätung, falls die Ankunftszeit nach der Soll-Zeit liegt
             if (ankunftszeit.isAfter(expectedTime)) {
                 long delayMinutes = ChronoUnit.MINUTES.between(expectedTime, ankunftszeit);
                 kommentar = (kommentar != null && !kommentar.isEmpty())
                         ? kommentar + " | Verspätung: " + delayMinutes + " Minuten"
                         : "Verspätung: " + delayMinutes + " Minuten";
             }
-
-            final String finalKommentar = kommentar; // Final für den Lambda-Ausdruck
+            // Erstelle eine finale Kopie des Kommentars für die Verwendung in der
+            // Lambda-Ausdruck (erforderlich wegen Variablenbindung)
+            final String finalKommentar = kommentar;
+            // Überprüfe, ob für diesen Studenten an diesem Datum bereits eine Erfassung existiert.
+            // Falls ja, wird diese aktualisiert, andernfalls wird eine neue Erfassung erstellt.
             Erfassung erfassung = findByStudentAndDate(student.getId(), datum)
                     .map(e -> {
                         e.setStatus(status);
@@ -86,28 +122,9 @@ public class ErfassungService {
 
             erfassungenToSave.add(erfassung);
         }
-
         saveAll(erfassungenToSave);
         return gruppeId;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     /**
@@ -122,34 +139,11 @@ public class ErfassungService {
      * @param monatEnde  das Enddatum des Monats.
      * @return eine Liste von {@link Erfassung} Objekten, die den Kriterien entsprechen.
      */
-    public List<Erfassung> getByGruppeUndMonat(Integer gruppeId, LocalDate monatStart, LocalDate monatEnde) {
+    public List<Erfassung> findByGruppeUndMonat(Integer gruppeId, LocalDate monatStart, LocalDate monatEnde) {
         // Abrufen aller Erfassungen für die angegebene Gruppe und den Zeitraum
         return erfassungRepository.findByStudenten_GruppeIdAndDatumBetween(gruppeId, monatStart, monatEnde);
     }
 
-    /**
-     * Aktualisiert eine bestehende Erfassung mit einem neuen Status und Kommentar.
-     * <p>
-     * Es wird die Erfassung anhand der übergebenen ID gesucht. Falls diese vorhanden ist, wird
-     * der Status anhand der angegebenen Status-ID aktualisiert und der Kommentar gesetzt. Anschließend
-     * wird die Erfassung gespeichert.
-     *
-     * @param erfassungId die ID der zu aktualisierenden Erfassung.
-     * @param statusId    die ID des neuen Status, der gesetzt werden soll.
-     * @param kommentar der Kommentar, der der Erfassung hinzugefügt werden soll.
-     */
-    public void updateErfassung(Integer erfassungId, Integer statusId, String kommentar) {
-        // Suchen der Erfassung anhand der ID
-        Optional<Erfassung> optionalErfassung = erfassungRepository.findById(erfassungId);
-        // Aktualisieren des Status und Kommentars in der Erfassung
-        optionalErfassung.ifPresent(erfassung -> {
-            Status neuerStatus = statusRepository.findById(statusId).orElseThrow();
-            erfassung.setStatus(neuerStatus);
-            erfassung.setKommentar(kommentar);
-            // Speichern der aktualisierten Erfassung
-            erfassungRepository.save(erfassung);
-        });
-    }
 
     /**
      * Sucht eine Erfassung anhand der Studenten-ID und eines bestimmten Datums.
@@ -157,34 +151,13 @@ public class ErfassungService {
      * @param studentId die ID des Studenten, dessen Erfassung gesucht wird.
      * @param date      das Datum, für das die Erfassung gesucht wird.
      * @return ein {@link Optional} mit dem gefundenen {@link Erfassung} Objekt,
-     *         oder leer, falls keine Erfassung gefunden wird.
+     * oder leer, falls keine Erfassung gefunden wird.
      */
     public Optional<Erfassung> findByStudentAndDate(Integer studentId, LocalDate date) {
         // Abrufen der Erfassung anhand der Studenten-ID und des Datums
         return erfassungRepository.findByStudenten_IdAndDatum(studentId, date);
     }
 
-    /**
-     * Sucht eine Erfassung anhand der Erfassungs-ID.
-     *
-     * @param id die ID der Erfassung.
-     * @return ein {@link Optional} mit dem gefundenen {@link Erfassung} Objekt,
-     *         oder leer, falls keine Erfassung gefunden wird.
-     */
-    public Optional<Erfassung> findById(Integer id) {
-        // Abrufen der Erfassung anhand der ID
-        return erfassungRepository.findById(id);
-    }
-
-    /**
-     * Speichert eine neue oder aktualisierte Erfassung.
-     *
-     * @param erfassung das {@link Erfassung} Objekt, das gespeichert werden soll.
-     */
-    public void save(Erfassung erfassung) {
-        // Speichern der Erfassung im Repository
-        erfassungRepository.save(erfassung);
-    }
 
     /**
      * Speichert alle übergebenen Erfassungen in der Datenbank.

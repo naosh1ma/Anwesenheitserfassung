@@ -80,6 +80,17 @@ public class ErfassungController {
         // Alle Studenten der Gruppe abrufen.
         List<Studenten> studentenListe = studentenService.findByGruppeId(gruppeId);
         // Erstelle ein neues Formularobjekt, das die Erfassungsdaten kapselt.
+        AnwesenheitForm form = getAnwesenheitForm(studentenListe);
+
+        // Füge alle nötigen Model-Attribute hinzu
+        model.addAttribute("anwesenheitForm", form);
+        model.addAttribute("gruppe", gruppe);
+        model.addAttribute("studentenListe", studentenListe);
+        model.addAttribute("statusListe", statusService.findAll());
+        return "anwesenheit";
+    }
+
+    private static AnwesenheitForm getAnwesenheitForm(List<Studenten> studentenListe) {
         AnwesenheitForm form = new AnwesenheitForm();
         // Initialisiere die Liste der Einträge
         List<AnwesenheitDTO> eintraege = new ArrayList<>();
@@ -94,17 +105,8 @@ public class ErfassungController {
         }
         // Setze die Einträge im Formularobjekt.
         form.setEintraege(eintraege);
-
-        // Füge alle nötigen Model-Attribute hinzu
-        model.addAttribute("anwesenheitForm", form);
-        model.addAttribute("gruppe", gruppe);
-        model.addAttribute("studentenListe", studentenListe);
-        model.addAttribute("statusListe", statusService.findAll());
-        return "anwesenheit";
+        return form;
     }
-
-
-
 
 
     /**

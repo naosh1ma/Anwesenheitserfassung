@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>com.art.erfassung.model.Gruppe</OriginalElement>
+  <nodes>
+    <node x="306.75" y="923.5">com.art.erfassung.repository.ErfassungRepository</node>
+    <node x="123.25" y="-14.0">com.art.erfassung.controller.ErfassungController</node>
+    <node x="-66.25" y="773.0">com.art.erfassung.model.Erfassung</node>
+    <node x="319.5" y="379.5">com.art.erfassung.service.ErfassungService</node>
+    <node x="52.5" y="253.0">com.art.erfassung.dto.AnwesenheitDTO</node>
+    <node x="-135.5" y="1629.0">com.art.erfassung.model.Gruppe</node>
+    <node x="130.0" y="1293.0">com.art.erfassung.model.Status</node>
+    <node x="-155.0" y="1224.0">com.art.erfassung.model.Studenten</node>
+    <node x="873.75" y="946.5">com.art.erfassung.repository.StudentenRepository</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="com.art.erfassung.service.ErfassungService" target="com.art.erfassung.model.Erfassung" relationship="CREATE">
+      <point x="-125.0" y="108.5" />
+      <point x="444.5" y="743.0" />
+      <point x="110.25" y="743.0" />
+      <point x="0.0" y="-200.5" />
+    </edge>
+    <edge source="com.art.erfassung.model.Studenten" target="com.art.erfassung.model.Gruppe" relationship="TO_ONE">
+      <point x="0.0" y="177.5" />
+      <point x="0.0" y="-108.5" />
+    </edge>
+    <edge source="com.art.erfassung.model.Erfassung" target="com.art.erfassung.model.Studenten" relationship="TO_ONE">
+      <point x="0.0" y="200.5" />
+      <point x="110.25" y="1199.0" />
+      <point x="-22.5" y="1199.0" />
+      <point x="0.0" y="-177.5" />
+    </edge>
+    <edge source="com.art.erfassung.model.Erfassung" target="com.art.erfassung.model.Status" relationship="TO_ONE">
+      <point x="0.0" y="200.5" />
+      <point x="110.25" y="1199.0" />
+      <point x="243.0" y="1199.0" />
+      <point x="0.0" y="-108.5" />
+    </edge>
+    <edge source="com.art.erfassung.controller.ErfassungController" target="com.art.erfassung.dto.AnwesenheitDTO" relationship="CREATE">
+      <point x="-124.75" y="108.5" />
+      <point x="248.0" y="228.0" />
+      <point x="176.0" y="228.0" />
+      <point x="0.0" y="-235.0" />
+    </edge>
+    <edge source="com.art.erfassung.service.ErfassungService" target="com.art.erfassung.repository.StudentenRepository" relationship="TO_ONE">
+      <point x="125.0" y="108.5" />
+      <point x="694.5" y="743.0" />
+      <point x="804.5" y="743.0" />
+      <point x="804.5" y="753.0" />
+      <point x="1028.75" y="753.0" />
+      <point x="0.0" y="-27.0" />
+    </edge>
+    <edge source="com.art.erfassung.service.ErfassungService" target="com.art.erfassung.repository.ErfassungRepository" relationship="TO_ONE">
+      <point x="125.0" y="108.5" />
+      <point x="694.5" y="743.0" />
+      <point x="804.5" y="743.0" />
+      <point x="804.5" y="753.0" />
+      <point x="580.25" y="753.0" />
+      <point x="0.0" y="-50.0" />
+    </edge>
+    <edge source="com.art.erfassung.controller.ErfassungController" target="com.art.erfassung.service.ErfassungService" relationship="TO_ONE">
+      <point x="124.75" y="108.5" />
+      <point x="497.5" y="228.0" />
+      <point x="569.5" y="228.0" />
+      <point x="0.0" y="-108.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic" zoom="0.493085106382979" showDependencies="true" x="557.1815533980581" y="1595.026882416396" />
+  <SelectedNodes />
+  <Categories>
+    <Category>Constructors</Category>
+    <Category>Fields</Category>
+    <Category>Methods</Category>
+  </Categories>
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

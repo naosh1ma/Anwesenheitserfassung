@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="EN">
 <head>
     <title>Anwesenheitsübersicht</title>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-
 <nav class="navbar">
     <div class="navbar-container">
         <div class="logo">
@@ -20,12 +19,9 @@
         </ul>
     </div>
 </nav>
-
-
 <body>
 <div class="content container mt-5">
     <h2>Anwesenheitsübersicht für <span th:text="${gruppe.bezeichnung}"></span></h2>
-
     <form method="get">
         <label for="monat">Monat auswählen:</label>
         <input type="month" id="monat" name="monat" th:value="${monat}">
@@ -53,13 +49,11 @@
         (${erfassung.status.bezeichnung == 'Krankmeldung'} ? ' status-krank' : '')))
       ">
 </span>
-
         </td>
     </tr>
     </tbody>
 </table>
-
-<a href="/dashboard" class="btn btn-secondary">Zurück zur Gruppenübersicht</a>
+<a href="/gruppen" class="btn btn-secondary">Zurück zur Gruppenübersicht</a>
     </div>
 </body>
 </html>

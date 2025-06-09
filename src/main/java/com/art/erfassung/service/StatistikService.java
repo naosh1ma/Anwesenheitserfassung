@@ -71,7 +71,6 @@ public class StatistikService {
                 verspaetet);
     }
 
-
     /**
      * Record zur Darstellung des Statistik-Ergebnisses eines Studenten.
      *
@@ -90,6 +89,4 @@ public class StatistikService {
             long krank,
             long verspaetungen) {
     }
-
-
 }

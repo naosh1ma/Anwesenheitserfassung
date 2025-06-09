@@ -1,7 +1,7 @@
 package com.art.erfassung.controller;
 
-import com.art.erfassung.dto.AnwesenheitDTO;
-import com.art.erfassung.dto.AnwesenheitForm;
+import com.art.erfassung.dto.ErfassungDTO;
+import com.art.erfassung.dto.ErfassungForm;
 import com.art.erfassung.model.Gruppe;
 import com.art.erfassung.model.Studenten;
 import com.art.erfassung.service.ErfassungService;
@@ -79,7 +79,7 @@ public class ErfassungController {
         // Alle Studenten der Gruppe abrufen.
         List<Studenten> studentenListe = studentenService.findByGruppeId(gruppeId);
         // Erstelle ein neues Formularobjekt, das die Erfassungsdaten kapselt.
-        AnwesenheitForm form = getAnwesenheitForm(studentenListe);
+        ErfassungForm form = getAnwesenheitForm(studentenListe);
 
         // Füge alle nötigen Model-Attribute hinzu
         model.addAttribute("anwesenheitForm", form);
@@ -89,13 +89,13 @@ public class ErfassungController {
         return "anwesenheit";
     }
 
-    private static AnwesenheitForm getAnwesenheitForm(List<Studenten> studentenListe) {
-        AnwesenheitForm form = new AnwesenheitForm();
+    private static ErfassungForm getAnwesenheitForm(List<Studenten> studentenListe) {
+        ErfassungForm form = new ErfassungForm();
         // Initialisiere die Liste der Einträge
-        List<AnwesenheitDTO> eintraege = new ArrayList<>();
+        List<ErfassungDTO> eintraege = new ArrayList<>();
         // Für jeden Studenten wird ein entsprechendes DTO angelegt, in dem die Studenten-ID (und optional der Name) gesetzt wird.
         for (Studenten student : studentenListe) {
-            AnwesenheitDTO dto = new AnwesenheitDTO();
+            ErfassungDTO dto = new ErfassungDTO();
             dto.setStudentenId(student.getId());
             // Optional: Setze den Studentennamen für die Anzeige, falls diese Information benötigt wird.
             dto.setStudentenName(student.getVorname() + " " + student.getName());
@@ -124,7 +124,7 @@ public class ErfassungController {
      *                       oder zur Gruppenübersicht ("/gruppen") weiterleitet.
      */
     @PostMapping("/speichern")
-    public String speichernAnwesenheit(@Valid AnwesenheitForm form, BindingResult bindingResult, Model model) {
+    public String speichernAnwesenheit(@Valid ErfassungForm form, BindingResult bindingResult, Model model) {
         // Logge den Start der Verarbeitung mit den übergebenen Form-Daten.
         logger.debug("speichernAnwesenheit() wurde aufgerufen mit Form-Daten: {}", form);
         // Überprüfe, ob Validierungsfehler vorliegen.

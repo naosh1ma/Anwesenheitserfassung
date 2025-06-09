@@ -1,5 +1,7 @@
 package com.art.erfassung.controller;
 
+import com.art.erfassung.dto.StatistikDTO;
+import com.art.erfassung.mapper.StatistikMapper;
 import com.art.erfassung.service.StatistikService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -23,9 +25,13 @@ public class StudentenController {
     // Service zur Berechnung der Anwesenheitsstatistik.
     private final StatistikService statistikService;
 
+    // Mapper zur Konvertierung zwischen StatistikErgebnis und StatistikDTO.
+    private final StatistikMapper statistikMapper;
+
     @Autowired
-    public StudentenController(StatistikService statistikService) {
+    public StudentenController(StatistikService statistikService, StatistikMapper statistikMapper) {
         this.statistikService = statistikService;
+        this.statistikMapper = statistikMapper;
     }
 
     /**
@@ -44,14 +50,16 @@ public class StudentenController {
     @GetMapping("/{id}")
     public String getStatistik(@PathVariable("id") Integer studentId, Model model) {
         // Berechnet die Statistik für den angegebenen Studenten
-        var statistik = statistikService.berechneStudentenstatistik(studentId);
+        var statistikErgebnis = statistikService.berechneStudentenstatistik(studentId);
         // Falls keine Erfassung für den Studenten gefunden wurde, wird eine Weiterleitung initiiert
-        if (statistik.student() == null) {
+        if (statistikErgebnis.student() == null) {
             // Fallback, wenn keine Erfassung vorhanden ist
             return "redirect:/anwesenheit";
         }
+        // Konvertiert das StatistikErgebnis in ein StatistikDTO
+        StatistikDTO statistikDTO = statistikMapper.toDTO(statistikErgebnis);
         // Fügt die ermittelte Statistik dem Model hinzu, damit sie in der View verwendet werden kann
-        model.addAttribute("statistik", statistik);
+        model.addAttribute("statistik", statistikDTO);
         // Rückgabe des View-Namens "statistik"
         return "statistik";
     }

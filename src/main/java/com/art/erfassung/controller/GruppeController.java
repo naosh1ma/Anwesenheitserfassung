@@ -1,6 +1,7 @@
 package com.art.erfassung.controller;
 
-import com.art.erfassung.model.Gruppe;
+import com.art.erfassung.dto.GruppeDTO;
+import com.art.erfassung.mapper.GruppeMapper;
 import com.art.erfassung.service.GruppeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -20,12 +21,16 @@ import java.util.List;
 @RequestMapping
 public class GruppeController {
 
-    //Service zur Verwaltung von Gruppen.
+    // Service zur Verwaltung von Gruppen.
     private final GruppeService gruppeService;
 
+    // Mapper zur Konvertierung zwischen Gruppe-Entitäten und DTOs.
+    private final GruppeMapper gruppeMapper;
+
     @Autowired
-    public GruppeController(GruppeService gruppeService) {
+    public GruppeController(GruppeService gruppeService, GruppeMapper gruppeMapper) {
         this.gruppeService = gruppeService;
+        this.gruppeMapper = gruppeMapper;
     }
 
     /**
@@ -41,8 +46,8 @@ public class GruppeController {
      */
     @GetMapping("/gruppen")
     public String showDashboard(Model model) {
-        // Abrufen der Liste aller Gruppen
-        List<Gruppe> gruppenList = gruppeService.findAll();
+        // Abrufen der Liste aller Gruppen und Konvertierung in DTOs
+        List<GruppeDTO> gruppenList = gruppeMapper.toDTOList(gruppeService.findAll());
         // Hinzufügen der Gruppenliste zum Model, damit sie in der View verwendet werden kann
         model.addAttribute("gruppenListe", gruppenList);
         // Rückgabe des View-Namens "gruppen"

@@ -1,5 +1,11 @@
 package com.art.erfassung.controller;
 
+import com.art.erfassung.dto.ErfassungListeDTO;
+import com.art.erfassung.dto.GruppeDTO;
+import com.art.erfassung.dto.StudentenDTO;
+import com.art.erfassung.mapper.ErfassungListeMapper;
+import com.art.erfassung.mapper.GruppeMapper;
+import com.art.erfassung.mapper.StudentenMapper;
 import com.art.erfassung.model.Erfassung;
 import com.art.erfassung.model.Gruppe;
 import com.art.erfassung.model.Studenten;

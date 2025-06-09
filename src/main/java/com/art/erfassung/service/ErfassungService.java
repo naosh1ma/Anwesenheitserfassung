@@ -1,6 +1,6 @@
 package com.art.erfassung.service;
 
-import com.art.erfassung.dto.AnwesenheitDTO;
+import com.art.erfassung.dto.ErfassungDTO;
 import com.art.erfassung.model.Erfassung;
 import com.art.erfassung.model.Status;
 import com.art.erfassung.model.Studenten;
@@ -67,12 +67,12 @@ public class ErfassungService {
      * @throws DateTimeParseException falls ein nicht-leerer Ankunftszeit-String nicht in ein {@link LocalTime} geparst werden kann.
      */
 
-    public Integer erfassenAnwesenheiten(List<AnwesenheitDTO> dtos) {
+    public Integer erfassenAnwesenheiten(List<ErfassungDTO> dtos) {
         LocalDate datum = LocalDate.now();
         LocalTime expectedTime = LocalTime.of(8, 0);
         Integer gruppeId = null;
         List<Erfassung> erfassungenToSave = new ArrayList<>();
-        for (AnwesenheitDTO dto : dtos) {
+        for (ErfassungDTO dto : dtos) {
             Studenten student = studentenRepository.findById(dto.getStudentenId()).orElseThrow();
             Status status = statusRepository.findById(dto.getStatusId()).orElseThrow();
             String kommentar = dto.getKommentar();

@@ -35,14 +35,12 @@ public class ErfassungService {
     // Repository zur Verwaltung der Studenten-Daten
     private final StudentenRepository studentenRepository;
 
-
     @Autowired
     public ErfassungService(ErfassungRepository erfassungRepository, StatusRepository statusRepository, StudentenRepository studentenRepository) {
         this.erfassungRepository = erfassungRepository;
         this.statusRepository = statusRepository;
         this.studentenRepository = studentenRepository;
     }
-
 
     /**
      * Verarbeitet eine Liste von AnwesenheitDTOs zur Erfassung der Anwesenheitsdaten.
@@ -68,7 +66,6 @@ public class ErfassungService {
      * @return Die Gruppen-ID, zu der die Anwesenheitsdatensätze gehören, oder null, falls sie nicht ermittelt werden konnte.
      * @throws DateTimeParseException falls ein nicht-leerer Ankunftszeit-String nicht in ein {@link LocalTime} geparst werden kann.
      */
-
 
     public Integer erfassenAnwesenheiten(List<AnwesenheitDTO> dtos) {
         LocalDate datum = LocalDate.now();
@@ -107,7 +104,6 @@ public class ErfassungService {
         return gruppeId;
     }
 
-
     /**
      * Speichert alle übergebenen Erfassungen in der Datenbank.
      * <p>
@@ -121,7 +117,6 @@ public class ErfassungService {
     public void saveAll(List<Erfassung> erfassungenToSave) {
         erfassungRepository.saveAll(erfassungenToSave);
     }
-
 
     /**
      * Gibt eine Liste von Erfassungen zurück, die einer bestimmten Gruppe in einem bestimmten
@@ -140,7 +135,6 @@ public class ErfassungService {
         return erfassungRepository.findByStudenten_GruppeIdAndDatumBetween(gruppeId, monatStart, monatEnde);
     }
 
-
     /**
      * Sucht eine Erfassung anhand der Studenten-ID und eines bestimmten Datums.
      *
@@ -153,77 +147,4 @@ public class ErfassungService {
         // Abrufen der Erfassung anhand der Studenten-ID und des Datums
         return erfassungRepository.findByStudenten_IdAndDatum(studentId, date);
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//    public Integer erfassenAnwesenheiten(List<AnwesenheitDTO> dtos) {
-//        // Bestimme das aktuelle Datum
-//        LocalDate datum = LocalDate.now();
-//        // Setze die erwartete Ankunftszeit (08:00 Uhr)
-//        LocalTime expectedTime = LocalTime.of(8, 0);
-//        Integer gruppeId = null;
-//        // Liste, um alle zu speichernden Erfassungen zu sammeln (Batch-Verarbeitung)
-//        List<Erfassung> erfassungenToSave = new ArrayList<>();
-//
-//        for (AnwesenheitDTO dto : dtos) {
-//            // Hole den Studenten, wirft eine Exception bei Nichtfinden
-//            Studenten student = studentenRepository.findById(dto.getStudentenId()).orElseThrow();
-//            // Hole den Status, wirft ebenfalls eine Exception, falls nicht gefunden
-//            Status status = statusRepository.findById(dto.getStatusId()).orElseThrow();
-//            // Hole den (eventuell vorhandenen) Kommentar aus dem DTO
-//            String kommentar = dto.getKommentar();
-//            // Annahme: Alle Einträge gehören zur selben Gruppe
-//            gruppeId = student.getGruppe().getId();
-//            // Überprüfe, ob die Ankunftszeit angegeben wurde. Wenn nicht, setze auf expectedTime.
-//            String ankunftStr = dto.getAnkunftszeit();
-//            LocalTime ankunftszeit;
-//            // Wenn kein Wert eingegeben wurde, setze die Ankunftszeit auf die erwartete Zeit (pünktlich)
-//            if (ankunftStr == null || ankunftStr.trim().isEmpty()) {
-//                ankunftszeit = expectedTime;
-//            } else {
-//                // Andernfalls parsen wir den String in ein LocalTime-Objekt
-//                ankunftszeit = LocalTime.parse(ankunftStr);
-//            }
-//            // Berechne die Verspätung, falls die Ankunftszeit nach der Soll-Zeit liegt
-//            if (ankunftszeit.isAfter(expectedTime)) {
-//                long delayMinutes = ChronoUnit.MINUTES.between(expectedTime, ankunftszeit);
-//                kommentar = (kommentar != null && !kommentar.isEmpty())
-//                        ? kommentar + " | Verspätung: " + delayMinutes + " Minuten"
-//                        : "Verspätung: " + delayMinutes + " Minuten";
-//            }
-//            // Erstelle eine finale Kopie des Kommentars für die Verwendung in der
-//            // Lambda-Ausdruck (erforderlich wegen Variablenbindung)
-//            final String finalKommentar = kommentar;
-//            // Überprüfe, ob für diesen Studenten an diesem Datum bereits eine Erfassung existiert.
-//            // Falls ja, wird diese aktualisiert, andernfalls wird eine neue Erfassung erstellt.
-//            Erfassung erfassung = findByStudentAndDate(student.getId(), datum)
-//                    .map(e -> {
-//                        e.setStatus(status);
-//                        e.setKommentar(finalKommentar);
-//                        return e;
-//                    })
-//                    .orElseGet(() -> new Erfassung(student, datum, status, finalKommentar));
-//
-//            erfassungenToSave.add(erfassung);
-//        }
-//        saveAll(erfassungenToSave);
-//        return gruppeId;
-//    }
-
-
-
-
 }

@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public String handleIllegalArgumentException(IllegalArgumentException ex, Model model) {
         model.addAttribute("errorMessage", ex.getMessage());
-        return "error"; // Stelle sicher, dass du eine error.html existiert.
+        return "error";
     }
 
     /**

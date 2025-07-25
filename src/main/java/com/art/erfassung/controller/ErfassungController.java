@@ -79,17 +79,17 @@ public class ErfassungController {
         // Alle Studenten der Gruppe abrufen.
         List<Studenten> studentenListe = studentenService.findByGruppeId(gruppeId);
         // Erstelle ein neues Formularobjekt, das die Erfassungsdaten kapselt.
-        ErfassungForm form = getAnwesenheitForm(studentenListe);
+        ErfassungForm form = getErfassungForm(studentenListe);
 
         // Füge alle nötigen Model-Attribute hinzu
         model.addAttribute("anwesenheitForm", form);
         model.addAttribute("gruppe", gruppe);
         model.addAttribute("studentenListe", studentenListe);
         model.addAttribute("statusListe", statusService.findAll());
-        return "anwesenheit-modal";
+        return "anwesenheit";
     }
 
-    private static ErfassungForm getAnwesenheitForm(List<Studenten> studentenListe) {
+    private static ErfassungForm getErfassungForm(List<Studenten> studentenListe) {
         ErfassungForm form = new ErfassungForm();
         // Initialisiere die Liste der Einträge
         List<ErfassungDTO> eintraege = new ArrayList<>();
@@ -136,7 +136,6 @@ public class ErfassungController {
             return "anwesenheit";
         }
         // Delegiere die Verarbeitung der Anwesenheitsdaten an die Service-Schicht.
-        // Die Methode processAnwesenheiten() setzt alle notwendigen Geschäftsregeln um und gibt die zugehörige Gruppen-ID zurück.
         Integer gruppeId = erfassungService.erfassenAnwesenheiten(form.getEintraege());
         // Logge den erfolgreichen Abschluss der Verarbeitung.
         logger.info("Anwesenheit für Gruppe {} wurde erfolgreich verarbeitet.", gruppeId);

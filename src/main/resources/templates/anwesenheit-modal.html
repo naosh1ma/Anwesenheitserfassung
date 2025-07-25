@@ -35,8 +35,8 @@
         }
         /* Ändere die Schriftfarbe der Labels in Modal, z. B. rot */
         .modal label {
-            color: red;
-            font-weight: bold;
+            color: black;
+            font-weight: normal;
         }
         .toggle-button {
             margin-left: 10px;
@@ -71,7 +71,7 @@
     <p>Heutiges Datum: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}"></span></p>
 
     <!-- Formularbindung an erfassungForm -->
-    <form th:action="@{/anwesenheit/speichern}" th:object="${erfassungForm}" method="post">
+    <form th:action="@{/anwesenheit/speichern}" th:object="${anwesenheitForm}" method="post">
         <table class="table table-bordered">
             <thead>
             <tr>

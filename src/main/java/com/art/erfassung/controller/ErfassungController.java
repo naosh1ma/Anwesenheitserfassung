@@ -86,7 +86,7 @@ public class ErfassungController {
         model.addAttribute("gruppe", gruppe);
         model.addAttribute("studentenListe", studentenListe);
         model.addAttribute("statusListe", statusService.findAll());
-        return "anwesenheit";
+        return "anwesenheit-modal";
     }
 
     private static ErfassungForm getAnwesenheitForm(List<Studenten> studentenListe) {

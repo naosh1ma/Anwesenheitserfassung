@@ -50,6 +50,8 @@ public class GruppeController {
         List<GruppeDTO> gruppenList = gruppeMapper.toDTOList(gruppeService.findAll());
         // Hinzufügen der Gruppenliste zum Model, damit sie in der View verwendet werden kann
         model.addAttribute("gruppenListe", gruppenList);
+        model.addAttribute("pageTitle", "Gruppenübersicht");
+        model.addAttribute("pageDescription", "Wählen Sie eine Gruppe aus, um die Anwesenheit zu erfassen oder zu verwalten.");
         // Rückgabe des View-Namens "gruppen"
         return "gruppen";
     }

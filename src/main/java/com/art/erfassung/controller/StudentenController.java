@@ -60,6 +60,8 @@ public class StudentenController {
         StatistikDTO statistikDTO = statistikMapper.toDTO(statistikErgebnis);
         // Fügt die ermittelte Statistik dem Model hinzu, damit sie in der View verwendet werden kann
         model.addAttribute("statistik", statistikDTO);
+        model.addAttribute("pageTitle", "Statistik");
+        model.addAttribute("pageDescription", "Übersicht über die Anwesenheitsdaten und Fehlzeiten");
         // Rückgabe des View-Namens "statistik"
         return "statistik";
     }

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' - Erfassung'">Erfassung</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <link rel="icon" th:href="@{/images/logo.png}" type="image/png">
+    
+    <!-- Additional head content -->
+    <th:block layout:fragment="head"></th:block>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="logo">
+                <a th:href="@{/willkommen}" class="navbar-logo">
+                    <img th:src="@{/images/logo.png}" alt="Erfassung Logo"/>
+                    <span class="logo-text">Erfassung</span>
+                </a>
+            </div>
+            <ul class="menu">
+                <li><a th:href="@{/willkommen}" class="nav-link">
+                    <span class="icon">🏠</span> Startseite
+                </a></li>
+                <li><a th:href="@{/gruppen}" class="nav-link">
+                    <span class="icon">📚</span> Gruppen
+                </a></li>
+                <li><a th:href="@{/anwesenheitsliste}" class="nav-link">
+                    <span class="icon">📋</span> Übersicht
+                </a></li>
+                <li><a th:href="@{/statistik}" class="nav-link">
+                    <span class="icon">📊</span> Statistiken
+                </a></li>
+                <li><a th:href="@{/logout}" class="nav-link logout">
+                    <span class="icon">🚪</span> Abmelden
+                </a></li>
+            </ul>
+            <div class="user-info">
+                <span class="user-name" th:text="${#authentication.name}">Benutzer</span>
+                <span class="user-role" th:if="${#authentication.authorities}">
+                    <span th:each="authority : ${#authentication.authorities}" 
+                          th:text="${authority.authority == 'ROLE_ADMIN' ? 'Administrator' : 'Lehrer'}"></span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Success/Error Messages -->
+        <div th:replace="fragments/messages :: all-messages"></div>
+        
+        <!-- Page Content -->
+        <div class="container">
+            <div class="page-header">
+                <h1 th:text="${pageTitle}">Seitentitel</h1>
+                <p th:if="${pageDescription}" class="page-description" th:text="${pageDescription}"></p>
+            </div>
+            
+            <div class="page-content">
+                <th:block layout:fragment="content">
+                    <!-- Page content goes here -->
+                </th:block>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Erfassung System</h4>
+                    <p>Anwesenheitserfassung für Bildungseinrichtungen</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Navigation</h4>
+                    <ul>
+                        <li><a th:href="@{/willkommen}">Startseite</a></li>
+                        <li><a th:href="@{/gruppen}">Gruppen</a></li>
+                        <li><a th:href="@{/statistik}">Statistiken</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Support</h4>
+                    <p>Bei Fragen wenden Sie sich an den Administrator</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Erfassung System. Alle Rechte vorbehalten.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Additional scripts -->
+    <th:block layout:fragment="scripts"></th:block>
+</body>
+</html>

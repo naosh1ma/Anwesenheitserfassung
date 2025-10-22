@@ -1,16 +1,66 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="de" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
 <head>
     <title>Gruppenübersicht</title>
-    <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-<body class="gruppe-container">
-<h2>Wähle eine Gruppe</h2>
+<body>
+    <div layout:fragment="content">
+        <div class="groups-container">
+            <div class="groups-header">
+                <h2>Gruppenübersicht</h2>
+                <p class="groups-description">Wählen Sie eine Gruppe aus, um die Anwesenheit zu erfassen oder zu verwalten.</p>
+            </div>
 
-<ul class="list-group">
-    <li class="list-group-item" th:each="gruppe : ${gruppenListe}">
-        <a th:href="@{/anwesenheit/{id}(id=${gruppe.id})}" th:text="${gruppe.bezeichnung}" class="btn btn-primary"></a>
-    </li>
-</ul>
+            <div class="groups-grid" th:if="${gruppenListe != null and !gruppenListe.empty}">
+                <div class="group-card" th:each="gruppe : ${gruppenListe}">
+                    <div class="group-card-header">
+                        <h3 th:text="${gruppe.bezeichnung}">Gruppe</h3>
+                        <span class="group-icon">📚</span>
+                    </div>
+                    <div class="group-card-content">
+                        <p class="group-description">Klicken Sie hier, um die Anwesenheit für diese Gruppe zu erfassen.</p>
+                    </div>
+                    <div class="group-card-actions">
+                        <a th:href="@{/anwesenheit/{id}(id=${gruppe.id})}" 
+                           class="btn btn-primary group-action-btn">
+                            <span class="icon">✅</span>
+                            Anwesenheit erfassen
+                        </a>
+                        <a th:href="@{/anwesenheitsliste?gruppeId={id}(id=${gruppe.id})}" 
+                           class="btn btn-secondary group-action-btn">
+                            <span class="icon">📋</span>
+                            Übersicht anzeigen
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="empty-state" th:if="${gruppenListe == null or gruppenListe.empty}">
+                <div class="empty-state-icon">📚</div>
+                <h3>Keine Gruppen gefunden</h3>
+                <p>Es sind derzeit keine Gruppen verfügbar. Kontaktieren Sie den Administrator, um Gruppen hinzuzufügen.</p>
+                <a th:href="@{/willkommen}" class="btn btn-primary">
+                    <span class="icon">🏠</span>
+                    Zur Startseite
+                </a>
+            </div>
+
+            <div class="quick-actions">
+                <h3>Schnellzugriff</h3>
+                <div class="quick-actions-grid">
+                    <a th:href="@{/statistik}" class="quick-action-card">
+                        <span class="quick-action-icon">📊</span>
+                        <span class="quick-action-text">Statistiken anzeigen</span>
+                    </a>
+                    <a th:href="@{/anwesenheitsliste}" class="quick-action-card">
+                        <span class="quick-action-icon">📋</span>
+                        <span class="quick-action-text">Alle Übersichten</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

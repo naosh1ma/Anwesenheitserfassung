@@ -37,6 +37,12 @@
 
 <!-- Hauptinhalt -->
 <div class="content container mt-4">
+    <!-- Success Message -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    
+    <!-- Error Message -->
+    <div th:if="${errorMessage}" class="alert alert-error" th:utext="${errorMessage}"></div>
+    
     <h2 th:if="${gruppe != null}">
         Anwesenheitserfassung für Gruppe: <span th:text="${gruppe.bezeichnung}"></span>
     </h2>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Success Messages -->
+<div th:fragment="success-message" th:if="${successMessage}" class="alert alert-success">
+    <div class="alert-content">
+        <span class="alert-icon">✅</span>
+        <span th:text="${successMessage}"></span>
+    </div>
+</div>
+
+<!-- Error Messages -->
+<div th:fragment="error-message" th:if="${errorMessage}" class="alert alert-error">
+    <div class="alert-content">
+        <span class="alert-icon">❌</span>
+        <span th:utext="${errorMessage}"></span>
+    </div>
+</div>
+
+<!-- Info Messages -->
+<div th:fragment="info-message" th:if="${infoMessage}" class="alert alert-info">
+    <div class="alert-content">
+        <span class="alert-icon">ℹ️</span>
+        <span th:text="${infoMessage}"></span>
+    </div>
+</div>
+
+<!-- Warning Messages -->
+<div th:fragment="warning-message" th:if="${warningMessage}" class="alert alert-warning">
+    <div class="alert-content">
+        <span class="alert-icon">⚠️</span>
+        <span th:text="${warningMessage}"></span>
+    </div>
+</div>
+
+<!-- All Messages Combined -->
+<div th:fragment="all-messages">
+    <div th:replace="fragments/messages :: success-message"></div>
+    <div th:replace="fragments/messages :: error-message"></div>
+    <div th:replace="fragments/messages :: info-message"></div>
+    <div th:replace="fragments/messages :: warning-message"></div>
+</div>
+
+</body>
+</html>

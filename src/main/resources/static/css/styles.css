@@ -159,3 +159,142 @@ table td {
     border: 1px solid #ccc;
     border-radius: 4px;
 }
+
+/* Alert Messages */
+.alert {
+    padding: 15px 20px;
+    margin: 20px 0;
+    border-radius: 6px;
+    border-left: 4px solid;
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.alert-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.alert-icon {
+    margin-right: 10px;
+    font-size: 1.2em;
+}
+
+.alert-success {
+    background-color: #d4edda;
+    border-color: #28a745;
+    color: #155724;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #17a2b8;
+    color: #0c5460;
+}
+
+/* Error Page Styles */
+.error-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 40px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.error-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.error-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+    display: block;
+}
+
+.error-content {
+    margin-bottom: 30px;
+}
+
+.error-message {
+    background-color: #f8f9fa;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #dc3545;
+}
+
+.error-actions {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+}
+
+.error-help {
+    background-color: #e9ecef;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.error-help h3 {
+    margin-bottom: 15px;
+    color: #495057;
+}
+
+.error-help ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.error-help li {
+    margin-bottom: 8px;
+    color: #6c757d;
+}
+
+.error-footer {
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.9em;
+    border-top: 1px solid #dee2e6;
+    padding-top: 20px;
+}
+
+.timestamp {
+    font-style: italic;
+    margin-top: 10px;
+}
+
+/* Responsive Design for Alerts */
+@media (max-width: 768px) {
+    .alert {
+        padding: 12px 15px;
+        margin: 15px 0;
+    }
+    
+    .error-actions {
+        flex-direction: column;
+    }
+    
+    .error-actions .btn {
+        width: 100%;
+        text-align: center;
+    }
+}

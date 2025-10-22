@@ -1,13 +1,95 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>Fehler</title>
-  <link rel="stylesheet" th:href="@{/css/styles.css}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fehler - Erfassung</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-<body class="container mt-4">
-<h2>Fehler</h2>
-<p th:text="${errorMessage}"></p>
-<a href="/" class="btn btn-primary">Zurück zur Startseite</a>
+<body>
+
+<div class="container">
+    <div class="error-container">
+        <div class="error-header">
+            <div class="error-icon" th:classappend="${errorType}">
+                <span th:switch="${errorType}">
+                    <span th:case="'validation'" class="icon">⚠️</span>
+                    <span th:case="'not_found'" class="icon">🔍</span>
+                    <span th:case="'format'" class="icon">📅</span>
+                    <span th:case="'database'" class="icon">🗄️</span>
+                    <span th:case="'access_denied'" class="icon">🔒</span>
+                    <span th:case="'internal'" class="icon">💥</span>
+                    <span th:case="*" class="icon">❌</span>
+                </span>
+            </div>
+            <h1>Ein Fehler ist aufgetreten</h1>
+        </div>
+
+        <div class="error-content">
+            <div class="error-message" th:utext="${errorMessage}">
+                Ein unerwarteter Fehler ist aufgetreten.
+            </div>
+
+            <div class="error-actions">
+                <a th:href="@{/willkommen}" class="btn btn-primary">
+                    <span class="icon">🏠</span>
+                    Zur Startseite
+                </a>
+                
+                <a th:href="@{/gruppen}" class="btn btn-secondary">
+                    <span class="icon">📚</span>
+                    Zu den Gruppen
+                </a>
+                
+                <button onclick="history.back()" class="btn btn-outline">
+                    <span class="icon">⬅️</span>
+                    Zurück
+                </button>
+            </div>
+
+            <div class="error-help" th:if="${errorType == 'validation'}">
+                <h3>Hilfe bei Validierungsfehlern:</h3>
+                <ul>
+                    <li>Überprüfen Sie alle Pflichtfelder</li>
+                    <li>Verwenden Sie das korrekte Datumsformat (DD.MM.YYYY)</li>
+                    <li>Verwenden Sie das korrekte Zeitformat (HH:MM)</li>
+                </ul>
+            </div>
+
+            <div class="error-help" th:if="${errorType == 'not_found'}">
+                <h3>Ressource nicht gefunden:</h3>
+                <ul>
+                    <li>Die angeforderte Gruppe oder der Student existiert möglicherweise nicht</li>
+                    <li>Überprüfen Sie die URL auf Tippfehler</li>
+                    <li>Kontaktieren Sie den Administrator, falls das Problem weiterhin besteht</li>
+                </ul>
+            </div>
+
+            <div class="error-help" th:if="${errorType == 'access_denied'}">
+                <h3>Zugriff verweigert:</h3>
+                <ul>
+                    <li>Sie haben möglicherweise nicht die erforderlichen Berechtigungen</li>
+                    <li>Melden Sie sich mit einem anderen Benutzerkonto an</li>
+                    <li>Kontaktieren Sie den Administrator für weitere Berechtigungen</li>
+                </ul>
+            </div>
+
+            <div class="error-help" th:if="${errorType == 'database'}">
+                <h3>Datenbankfehler:</h3>
+                <ul>
+                    <li>Ein temporärer Datenbankfehler ist aufgetreten</li>
+                    <li>Versuchen Sie es in ein paar Minuten erneut</li>
+                    <li>Kontaktieren Sie den Administrator, falls das Problem anhält</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="error-footer">
+            <p>Falls das Problem weiterhin besteht, kontaktieren Sie bitte den Systemadministrator.</p>
+            <p class="timestamp">Fehler aufgetreten am: <span th:text="${#temporals.format(#temporals.createNow(), 'dd.MM.yyyy HH:mm')}"></span></p>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

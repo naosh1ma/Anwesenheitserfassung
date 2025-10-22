@@ -8,12 +8,12 @@ import com.art.erfassung.service.ErfassungService;
 import com.art.erfassung.service.GruppeService;
 import com.art.erfassung.service.StatusService;
 import com.art.erfassung.service.StudentenService;
-import jakarta.servlet.Filter;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,21 +125,45 @@ public class ErfassungController{
      *                       oder zur Gruppenübersicht ("/gruppen") weiterleitet.
      */
     @PostMapping("/speichern")
-    public String speichernAnwesenheit(@Valid ErfassungForm form, BindingResult bindingResult, Model model) {
+    public String speichernAnwesenheit(@Valid ErfassungForm form, BindingResult bindingResult, 
+                                      Model model, RedirectAttributes redirectAttributes) {
         // Logge den Start der Verarbeitung mit den übergebenen Form-Daten.
         logger.debug("speichernAnwesenheit() wurde aufgerufen mit Form-Daten: {}", form);
+        
         // Überprüfe, ob Validierungsfehler vorliegen.
         if (bindingResult.hasErrors()) {
             // Protokolliere jeden Validierungsfehler.
             bindingResult.getAllErrors().forEach(error -> logger.error("Validierungsfehler: {}", error));
-            // Füge eine allgemeine Fehlermeldung dem Model hinzu, um den Benutzer zu informieren.
-            model.addAttribute("errorMessage", "Bitte überprüfen Sie Ihre Eingaben.");
+            
+            // Sammle alle Validierungsfehler für eine detaillierte Anzeige
+            StringBuilder errorDetails = new StringBuilder("Bitte korrigieren Sie folgende Fehler:<br>");
+            bindingResult.getAllErrors().forEach(error -> 
+                errorDetails.append("• ").append(error.getDefaultMessage()).append("<br>")
+            );
+            
+            model.addAttribute("errorMessage", errorDetails.toString());
+            model.addAttribute("errorType", "validation");
             return "anwesenheit";
         }
-        // Delegiere die Verarbeitung der Anwesenheitsdaten an die Service-Schicht.
-        Integer gruppeId = erfassungService.erfassenAnwesenheiten(form.getEintraege());
-        // Logge den erfolgreichen Abschluss der Verarbeitung.
-        logger.info("Anwesenheit für Gruppe {} wurde erfolgreich verarbeitet.", gruppeId);
-        return (gruppeId != null) ? "redirect:/anwesenheit/" + gruppeId : "redirect:/gruppen";
+        
+        try {
+            // Delegiere die Verarbeitung der Anwesenheitsdaten an die Service-Schicht.
+            Integer gruppeId = erfassungService.erfassenAnwesenheiten(form.getEintraege());
+            
+            // Logge den erfolgreichen Abschluss der Verarbeitung.
+            logger.info("Anwesenheit für Gruppe {} wurde erfolgreich verarbeitet.", gruppeId);
+            
+            // Erfolgsmeldung für den Benutzer
+            redirectAttributes.addFlashAttribute("successMessage", 
+                "Anwesenheitsdaten wurden erfolgreich gespeichert!");
+            
+            return (gruppeId != null) ? "redirect:/anwesenheit/" + gruppeId : "redirect:/gruppen";
+            
+        } catch (Exception e) {
+            logger.error("Fehler beim Speichern der Anwesenheitsdaten: {}", e.getMessage(), e);
+            model.addAttribute("errorMessage", "Fehler beim Speichern der Daten. Bitte versuchen Sie es erneut.");
+            model.addAttribute("errorType", "database");
+            return "anwesenheit";
+        }
     }
 }

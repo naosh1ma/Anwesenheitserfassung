@@ -1,24 +1,46 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Anmeldung - Erfassung</title>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
-
 </head>
 <body>
 
 <div class="login-container">
-    <h2>Login</h2>
+    <div class="login-form">
+        <h2>Anmeldung</h2>
+        <p class="subtitle">Anwesenheitserfassung System</p>
 
-    <form action="/" method="post">
-        <label for="benutzername"></label>
-        <input type="text" id="benutzername" name="benutzername" required>
-        <label for="passwort"></label>
-        <input type="password" id="passwort" name="passwort" required>
-        <button type="submit">Anmelden</button>
-    </form>
+        <!-- Error message -->
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+        
+        <!-- Success message -->
+        <div th:if="${message}" class="alert alert-success" th:text="${message}"></div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="username">Benutzername:</label>
+                <input type="text" id="username" name="username" required 
+                       placeholder="Benutzername eingeben">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Passwort:</label>
+                <input type="password" id="password" name="password" required 
+                       placeholder="Passwort eingeben">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Anmelden</button>
+        </form>
+
+        <div class="login-info">
+            <h4>Test-Zugänge:</h4>
+            <p><strong>Administrator:</strong> admin / admin123</p>
+            <p><strong>Lehrer:</strong> teacher / teacher123</p>
+        </div>
+    </div>
 </div>
 
 </body>

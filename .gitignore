@@ -31,4 +31,23 @@ build/
 
 ### VS Code ###
 .vscode/
-/docs/
+
+### Environment and Configuration ###
+.env
+.env.local
+.env.production
+application-local.properties
+application-secret.properties
+
+### Logs ###
+logs/
+*.log
+
+### Database ###
+*.db
+*.sqlite
+*.sqlite3
+
+### OS ###
+.DS_Store
+Thumbs.db

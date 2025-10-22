@@ -8,6 +8,7 @@ import com.art.erfassung.service.ErfassungService;
 import com.art.erfassung.service.GruppeService;
 import com.art.erfassung.service.StatusService;
 import com.art.erfassung.service.StudentenService;
+import jakarta.servlet.Filter;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -29,7 +30,7 @@ import java.util.List;
  */
 @Controller
 @RequestMapping("/anwesenheit")
-public class ErfassungController {
+public class ErfassungController{
 
     // Service zur Verwaltung von Studenten
     private final StudentenService studentenService;

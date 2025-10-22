@@ -1,14 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Willkommen - Erfassung</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
 <body>
 
-<h1>Willkommen</h1>
+<div class="container">
+    <header class="header">
+        <h1>Willkommen, <span th:text="${username}">Benutzer</span>!</h1>
+        <div class="user-info">
+            <span th:if="${isAdmin}" class="role-badge admin">Administrator</span>
+            <span th:unless="${isAdmin}" class="role-badge teacher">Lehrer</span>
+            <a th:href="@{/logout}" class="logout-link">Abmelden</a>
+        </div>
+    </header>
 
-<a class="button" th:href="@{/gruppen}">Weiter</a>
+    <main class="main-content">
+        <div class="welcome-message">
+            <h2>Anwesenheitserfassung System</h2>
+            <p>Willkommen im Anwesenheitserfassungssystem. Hier können Sie die Anwesenheit von Studenten verwalten und Statistiken einsehen.</p>
+        </div>
+
+        <div class="action-buttons">
+            <a th:href="@{/gruppen}" class="btn btn-primary">
+                <span class="icon">📚</span>
+                Gruppen verwalten
+            </a>
+            
+            <a th:if="${isAdmin}" th:href="@{/studenten}" class="btn btn-secondary">
+                <span class="icon">👥</span>
+                Studenten verwalten
+            </a>
+            
+            <a th:href="@{/statistik}" class="btn btn-secondary">
+                <span class="icon">📊</span>
+                Statistiken anzeigen
+            </a>
+        </div>
+
+        <div class="quick-actions">
+            <h3>Schnellzugriff</h3>
+            <div class="quick-links">
+                <a th:href="@{/anwesenheit/1}" class="quick-link">
+                    <span class="icon">✅</span>
+                    Anwesenheit erfassen
+                </a>
+                <a th:href="@{/liste}" class="quick-link">
+                    <span class="icon">📋</span>
+                    Anwesenheitsliste
+                </a>
+            </div>
+        </div>
+    </main>
+</div>
 
 </body>
 </html>

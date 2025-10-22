@@ -1,41 +1,112 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html lang="de" xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
 <head>
     <title th:if="${statistik.student() != null}"
            th:text="|Statistik für ${statistik.student.vorname} ${statistik.student.name}|">
         Statistik
     </title>
-    <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-<body class="container mt-5">
+<body>
+    <div layout:fragment="content">
+        <div class="statistics-container">
+            <div class="statistics-header">
+                <h2 th:if="${statistik.student() != null}"
+                    th:text="|Statistik für ${statistik.student.vorname} ${statistik.student.name}|">
+                    Statistik
+                </h2>
+                <p class="statistics-description">Übersicht über die Anwesenheitsdaten und Fehlzeiten</p>
+            </div>
 
-<h2 th:if="${statistik.student() != null}"
-    th:text="|Statistik für ${statistik.student.vorname} ${statistik.student.name}|">
-    Statistik
-</h2>
+            <div class="statistics-grid" th:if="${statistik != null}">
+                <div class="stat-card attendance-card">
+                    <div class="stat-card-header">
+                        <span class="stat-icon">📊</span>
+                        <h3>Gesamtanwesenheit</h3>
+                    </div>
+                    <div class="stat-value">
+                        <span th:text="${statistik.gesamtAnwesenheit()} + '%'">0%</span>
+                    </div>
+                    <div class="stat-description">
+                        Durchschnittliche Anwesenheitsrate
+                    </div>
+                </div>
 
-<table class="table mt-3">
-    <thead>
-    <tr>
-        <th>Gesamtanwesenheit (%)</th>
-        <th>Anzahl Entschuldigte Fehlzeiten</th>
-        <th>Anzahl Unentschuldigte Fehlzeiten</th>
-        <th>Anzahl Krankmeldungen</th>
-        <th>Anzahl Verspätungen</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr>
-        <td th:text="${statistik.gesamtAnwesenheit()}"></td>
-        <td th:text="${statistik.entschuldigt()}"></td>
-        <td th:text="${statistik.unentschuldigt()}"></td>
-        <td th:text="${statistik.krank()}"></td>
-        <td th:text="${statistik.verspaetungen()}"></td>
-    </tr>
-    </tbody>
-</table>
+                <div class="stat-card excused-card">
+                    <div class="stat-card-header">
+                        <span class="stat-icon">✅</span>
+                        <h3>Entschuldigte Fehlzeiten</h3>
+                    </div>
+                    <div class="stat-value">
+                        <span th:text="${statistik.entschuldigt()}">0</span>
+                    </div>
+                    <div class="stat-description">
+                        Anzahl entschuldigter Abwesenheiten
+                    </div>
+                </div>
 
-<a href="/anwesenheitsliste" class="btn btn-secondary">Zurück zur Anwesenheitsübersicht</a>
+                <div class="stat-card unexcused-card">
+                    <div class="stat-card-header">
+                        <span class="stat-icon">❌</span>
+                        <h3>Unentschuldigte Fehlzeiten</h3>
+                    </div>
+                    <div class="stat-value">
+                        <span th:text="${statistik.unentschuldigt()}">0</span>
+                    </div>
+                    <div class="stat-description">
+                        Anzahl unentschuldigter Abwesenheiten
+                    </div>
+                </div>
+
+                <div class="stat-card sick-card">
+                    <div class="stat-card-header">
+                        <span class="stat-icon">🤒</span>
+                        <h3>Krankmeldungen</h3>
+                    </div>
+                    <div class="stat-value">
+                        <span th:text="${statistik.krank()}">0</span>
+                    </div>
+                    <div class="stat-description">
+                        Anzahl Krankmeldungen
+                    </div>
+                </div>
+
+                <div class="stat-card late-card">
+                    <div class="stat-card-header">
+                        <span class="stat-icon">⏰</span>
+                        <h3>Verspätungen</h3>
+                    </div>
+                    <div class="stat-value">
+                        <span th:text="${statistik.verspaetungen()}">0</span>
+                    </div>
+                    <div class="stat-description">
+                        Anzahl Verspätungen
+                    </div>
+                </div>
+            </div>
+
+            <div class="empty-state" th:if="${statistik == null}">
+                <div class="empty-state-icon">📊</div>
+                <h3>Keine Statistiken verfügbar</h3>
+                <p>Es sind derzeit keine Statistiken für den ausgewählten Zeitraum verfügbar.</p>
+                <a th:href="@{/gruppen}" class="btn btn-primary">
+                    <span class="icon">📚</span>
+                    Zu den Gruppen
+                </a>
+            </div>
+
+            <div class="statistics-actions">
+                <a th:href="@{/gruppen}" class="btn btn-secondary">
+                    <span class="icon">📚</span>
+                    Zurück zu Gruppen
+                </a>
+                <a th:href="@{/anwesenheitsliste}" class="btn btn-primary">
+                    <span class="icon">📋</span>
+                    Übersicht anzeigen
+                </a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
-

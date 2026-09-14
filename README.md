@@ -39,7 +39,7 @@ cd erfassung
 #### MariaDB Setup (Produktion)
 ```sql
 CREATE DATABASE anwesenheit;
-CREATE USER 'admin_db'@'localhost' IDENTIFIED BY '***REMOVED***';
+CREATE USER 'admin_db'@'localhost' IDENTIFIED BY 'your_secure_password';
 GRANT ALL PRIVILEGES ON anwesenheit.* TO 'admin_db'@'localhost';
 FLUSH PRIVILEGES;
 ```
@@ -51,6 +51,15 @@ H2 wird automatisch für Tests verwendet - keine manuelle Einrichtung erforderli
 
 #### Entwicklungsumgebung
 Die Anwendung verwendet standardmäßig das `dev` Profil. Die Konfiguration befindet sich in `src/main/resources/application-dev.properties`.
+Das Datenbank-Passwort wird nicht im Repository gespeichert, sondern über Umgebungsvariablen gesetzt
+(z. B. in der IntelliJ-Run-Configuration):
+
+```bash
+export DB_PASSWORD=your_secure_password
+# Optional, falls abweichend von den Standardwerten
+export DB_URL=jdbc:mariadb://localhost:3306/anwesenheit
+export DB_USERNAME=admin_db
+```
 
 #### Produktionsumgebung
 Für die Produktion setzen Sie die folgenden Umgebungsvariablen:

@@ -131,7 +131,7 @@ src/
 1. **Passwörter ändern**: Ändern Sie die Standard-Passwörter vor der Produktionsnutzung
 2. **Datenbank-Zugangsdaten**: Verwenden Sie starke Passwörter und sichere Verbindungen
 3. **HTTPS**: Aktivieren Sie HTTPS in der Produktionsumgebung
-4. **CSRF-Schutz**: CSRF-Schutz ist derzeit für die Entwicklung deaktiviert
+4. **CSRF-Schutz**: CSRF-Schutz ist aktiviert. POST-Formulare müssen mit `th:action` gerendert werden, damit das Token eingefügt wird (auch das Abmelden erfolgt per POST)
 
 ### Umgebungsvariablen für Produktion
 
@@ -148,16 +148,17 @@ SPRING_PROFILES_ACTIVE=prod
 ## API-Endpunkte
 
 ### Öffentliche Endpunkte
-- `GET /` - Login-Seite
+- `GET /`, `GET /login` - Login-Seite
 - `POST /login` - Authentifizierung
-- `GET /logout` - Abmeldung
+- `POST /logout` - Abmeldung
 
 ### Geschützte Endpunkte
 - `GET /willkommen` - Willkommensseite
 - `GET /gruppen` - Gruppenübersicht
 - `GET /anwesenheit/{gruppeId}` - Anwesenheitserfassung
-- `POST /anwesenheit/speichern` - Anwesenheit speichern
-- `GET /statistik` - Statistiken anzeigen
+- `POST /anwesenheit/{gruppeId}/speichern` - Anwesenheit speichern
+- `GET /liste/{gruppeId}` - Monatliche Anwesenheitsliste einer Gruppe
+- `GET /studenten/{studentId}` - Statistik eines Studenten
 
 ## Beitragen
 

@@ -5,7 +5,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
@@ -17,13 +16,13 @@ import org.springframework.web.bind.annotation.RequestParam;
  * </p>
  */
 @Controller
-@RequestMapping("/")
 public class LoginController {
 
     /**
      * Zeigt die Login-Seite an.
      * <p>
-     * Diese Methode verarbeitet GET-Anfragen für die Login-Seite.
+     * Diese Methode verarbeitet GET-Anfragen für die Login-Seite unter "/" und "/login"
+     * (die in der SecurityConfig konfigurierte Login-Seite).
      * Falls ein Fehlerparameter übergeben wird, wird eine entsprechende
      * Fehlermeldung im Model angezeigt.
      * </p>
@@ -33,7 +32,7 @@ public class LoginController {
      * @param model das Model, in dem die Daten für die View gespeichert werden
      * @return den Namen der View "login", die die Login-Seite darstellt
      */
-    @GetMapping
+    @GetMapping({"/", "/login"})
     public String loginPage(@RequestParam(value = "error", required = false) String error,
                            @RequestParam(value = "logout", required = false) String logout,
                            Model model) {

@@ -14,8 +14,8 @@
         <ul class="menu">
             <li><a th:href="@{/willkommen}">Startseite</a></li>
             <li><a th:href="@{/gruppen}">Gruppen</a></li>
-            <li><a th:href="@{/anwesenheitl}">Erfassung</a></li>
-            <li><a th:href="@{/anwesenheitsliste}">Kursübersicht</a></li>
+            <li><a th:href="@{/anwesenheit/{id}(id=${gruppe.id})}">Erfassung</a></li>
+            <li><a th:href="@{/liste/{id}(id=${gruppe.id})}">Kursübersicht</a></li>
         </ul>
     </div>
 </nav>
@@ -53,7 +53,7 @@
     </tr>
     </tbody>
 </table>
-<a href="/gruppen" class="btn btn-secondary">Zurück zur Gruppenübersicht</a>
+<a th:href="@{/gruppen}" class="btn btn-secondary">Zurück zur Gruppenübersicht</a>
     </div>
 </body>
 </html>

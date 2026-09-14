@@ -29,8 +29,8 @@
         <ul class="menu">
             <li><a th:href="@{/willkommen}">Startseite</a></li>
             <li><a th:href="@{/gruppen}">Gruppen</a></li>
-            <li><a th:href="@{/anwesenheitl}">Erfassung</a></li>
-            <li><a th:href="@{/anwesenheitsliste}">Kursübersicht</a></li>
+            <li><a th:href="@{/anwesenheit/{id}(id=${gruppe.id})}">Erfassung</a></li>
+            <li><a th:href="@{/liste/{id}(id=${gruppe.id})}">Kursübersicht</a></li>
         </ul>
     </div>
 </nav>
@@ -39,17 +39,22 @@
 <div class="content container mt-4">
     <!-- Success Message -->
     <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
-    
+
     <!-- Error Message -->
-    <div th:if="${errorMessage}" class="alert alert-error" th:utext="${errorMessage}"></div>
-    
+    <div th:if="${errorMessage}" class="alert alert-error">
+        <span th:text="${errorMessage}"></span>
+        <ul th:if="${errorDetails}">
+            <li th:each="detail : ${errorDetails}" th:text="${detail}"></li>
+        </ul>
+    </div>
+
     <h2 th:if="${gruppe != null}">
         Anwesenheitserfassung für Gruppe: <span th:text="${gruppe.bezeichnung}"></span>
     </h2>
     <p>Heutiges Datum: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}"></span></p>
 
-    <!-- Formularbindung an erfassungForm -->
-    <form th:action="@{/anwesenheit/speichern}" th:object="${anwesenheitForm}" method="post">
+    <!-- Formularbindung an anwesenheitForm -->
+    <form th:action="@{/anwesenheit/{id}/speichern(id=${gruppe.id})}" th:object="${anwesenheitForm}" method="post">
         <table class="table table-bordered">
             <thead>
             <tr>
@@ -68,52 +73,35 @@
                     <input type="hidden" th:field="*{eintraege[__${iter.index}__].studentenId}"/>
                     <span th:text="*{eintraege[__${iter.index}__].studentenName}">Student Name</span>
                 </td>
-                <td>
-                    <!-- Standardbereich: "Anwesend" Radio-Button und Button "Abwesend wählen" -->
-                    <div th:attr="id='statusDefault_' + ${iter.index}">
+                <td th:with="abwesend=${eintrag.statusId != anwesendStatusId}">
+                    <!-- Standardbereich: "Anwesend" (vorausgewählt) und Button zur Auswahl eines Abwesenheitsgrunds -->
+                    <div th:id="|statusDefault_${iter.index}|" th:style="${abwesend} ? 'display: none;'">
                         <div class="radio-group">
                             <input type="radio"
                                    th:field="*{eintraege[__${iter.index}__].statusId}"
-                                   th:attr="id='anwesend_' + ${iter.index}"
-                                   value="1"
-                                   checked="checked"/>
-                            <label th:attr="for='anwesend_' + ${iter.index}">Anwesend</label>
+                                   th:id="|anwesend_${iter.index}|"
+                                   th:value="${anwesendStatusId}"/>
+                            <label th:for="|anwesend_${iter.index}|">Anwesend</label>
                         </div>
                         <div class="radio-group">
-                            <input type="radio"
-                                   th:field="*{eintraege[__${iter.index}__].statusId}"
-                                   th:attr="id='abwesend_' + ${iter.index}, onclick=|toggleStatus(this, ${iter.index})|"
-                                   value="abwesend"/>
-                            <label th:attr="for='abwesend_' + ${iter.index}">Abwesend</label>
+                            <button type="button" class="toggle-button" th:onclick="|showDetailed(${iter.index})|">
+                                Abwesend
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Detaillierter Bereich: Drei Radio-Buttons, zunächst hidden -->
-                    <div th:attr="id='statusDetailed_' + ${iter.index}" style="display: none;">
-                        <div class="radio-group">
+                    <!-- Detaillierter Bereich: alle übrigen Status als Abwesenheitsgründe -->
+                    <div th:id="|statusDetailed_${iter.index}|" th:style="${abwesend} ? '' : 'display: none;'">
+                        <div class="radio-group" th:each="status : ${statusListe}" th:unless="${status.id == anwesendStatusId}">
                             <input type="radio"
                                    th:field="*{eintraege[__${iter.index}__].statusId}"
-                                   th:attr="id='entschuldigt_' + ${iter.index}, onclick=|toggleStatus(this, ${iter.index})|"
-                                   value="2"/>
-                            <label th:attr="for='entschuldigt_' + ${iter.index}">Entschuldigt</label>
-                        </div>
-                        <div class="radio-group">
-                            <input type="radio"
-                                   th:field="*{eintraege[__${iter.index}__].statusId}"
-                                   th:attr="id='unentschuldigt_' + ${iter.index}, onclick=|toggleStatus(this, ${iter.index})|"
-                                   value="3"/>
-                            <label th:attr="for='unentschuldigt_' + ${iter.index}">Unentschuldigt</label>
-                        </div>
-                        <div class="radio-group">
-                            <input type="radio"
-                                   th:field="*{eintraege[__${iter.index}__].statusId}"
-                                   th:attr="id='krankmeldung_' + ${iter.index}, onclick=|toggleStatus(this, ${iter.index})|"
-                                   value="4"/>
-                            <label th:attr="for='krankmeldung_' + ${iter.index}">Krankmeldung</label>
+                                   th:id="|status_${iter.index}_${status.id}|"
+                                   th:value="${status.id}"/>
+                            <label th:for="|status_${iter.index}_${status.id}|" th:text="${status.bezeichnung}">Status</label>
                         </div>
                         <!-- Button, um zurück zum Standardbereich zu wechseln -->
                         <div class="radio-group">
-                            <button type="button" class="toggle-button" th:attr="onclick=|hideDetailed(${iter.index})|">
+                            <button type="button" class="toggle-button" th:onclick="|hideDetailed(${iter.index})|">
                                 Zurück
                             </button>
                         </div>
@@ -134,54 +122,23 @@
         </table>
         <button type="submit" class="btn btn-success">Speichern</button>
     </form>
-    <button href="/gruppen" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</button>
+    <a th:href="@{/gruppen}" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</a>
 </div>
 
 <!-- JavaScript zur Umschaltung -->
 <script type="text/javascript">
-    function toggleStatus(radio, index) {
-        var defaultDiv = document.getElementById("statusDefault_" + index);
-        var detailedDiv = document.getElementById("statusDetailed_" + index);
-        if (radio.value === "abwesend") {
-            if (defaultDiv) {
-                defaultDiv.style.display = "none";
-            }
-            if (detailedDiv) {
-                detailedDiv.style.display = "block";
-            }
-        } else if (radio.value === "anwesend") {
-            if (defaultDiv) {
-                defaultDiv.style.display = "block";
-            }
-            if (detailedDiv) {
-                detailedDiv.style.display = "none";
-            }
-        }
+    // Blendet die Abwesenheitsgründe ein. "Anwesend" wird abgewählt, damit ein Grund gewählt werden muss.
+    function showDetailed(index) {
+        document.getElementById("statusDefault_" + index).style.display = "none";
+        document.getElementById("statusDetailed_" + index).style.display = "block";
+        document.getElementById("anwesend_" + index).checked = false;
     }
 
-    function toggleDetailed(radio, index) {
-        // Hier könnte zusätzliche Logik für detaillierte Optionen stehen –
-        // aktuell bleibt der Bereich sichtbar, wenn eine detaillierte Option gewählt wird.
-        var detailedDiv = document.getElementById("statusDetailed_" + index);
-        if (detailedDiv) {
-            detailedDiv.style.display = "block";
-        }
-    }
-
+    // Kehrt zum Standardbereich zurück und wählt wieder "Anwesend" aus.
     function hideDetailed(index) {
-        var defaultDiv = document.getElementById("statusDefault_" + index);
-        var detailedDiv = document.getElementById("statusDetailed_" + index);
-        if (detailedDiv) {
-            detailedDiv.style.display = "none";
-        }
-        if (defaultDiv) {
-            defaultDiv.style.display = "block";
-            // Setze standardmäßig "anwesend" wieder aktiv.
-            var anwesendButton = document.getElementById("anwesend_" + index);
-            if (anwesendButton) {
-                anwesendButton.checked = true;
-            }
-        }
+        document.getElementById("statusDetailed_" + index).style.display = "none";
+        document.getElementById("statusDefault_" + index).style.display = "block";
+        document.getElementById("anwesend_" + index).checked = true;
     }
 </script>
 </body>

@@ -54,7 +54,7 @@ public class StudentenController {
         // Falls keine Erfassung für den Studenten gefunden wurde, wird eine Weiterleitung initiiert
         if (statistikErgebnis.student() == null) {
             // Fallback, wenn keine Erfassung vorhanden ist
-            return "redirect:/anwesenheit";
+            return "redirect:/gruppen";
         }
         // Konvertiert das StatistikErgebnis in ein StatistikDTO
         StatistikDTO statistikDTO = statistikMapper.toDTO(statistikErgebnis);

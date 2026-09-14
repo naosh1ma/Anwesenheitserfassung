@@ -3,6 +3,7 @@ package com.art.erfassung.controller;
 import com.art.erfassung.dto.ErfassungDTO;
 import com.art.erfassung.dto.ErfassungForm;
 import com.art.erfassung.model.Gruppe;
+import com.art.erfassung.model.Status;
 import com.art.erfassung.model.Studenten;
 import com.art.erfassung.service.ErfassungService;
 import com.art.erfassung.service.GruppeService;
@@ -12,6 +13,7 @@ import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.slf4j.Logger;
@@ -19,6 +21,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * Controller zur Verwaltung der Anwesenheitserfassung.
@@ -59,10 +64,9 @@ public class ErfassungController{
      *   <li>Die Gruppe wird anhand der übergebenen Gruppen-ID abgefragt. Falls die Gruppe
      *       nicht existiert, wird eine Exception geworfen.</li>
      *   <li>Die Liste der Studenten, die der Gruppe zugeordnet sind, wird ermittelt.</li>
-     *   <li>Ein {@code AnwesenheitsForm}-Objekt wird erstellt und für jeden Studenten ein
-     *       {@code AnwesenheitsDTO} initialisiert. Dabei wird zumindest die Studenten-ID und
-     *       optional der Name gesetzt.</li>
-     *   <li>Die benötigten Model-Attribute (Formular, Gruppe, Studentenliste und Statusliste)
+     *   <li>Ein {@code ErfassungForm}-Objekt wird erstellt und für jeden Studenten ein
+     *       {@code ErfassungDTO} initialisiert, das mit dem Status "Anwesend" vorbelegt ist.</li>
+     *   <li>Die benötigten Model-Attribute (Formular, Gruppe und Statusliste)
      *       werden dem Model hinzugefügt.</li>
      *   <li>Die Methode gibt den View-Namen "anwesenheit" zurück, sodass das entsprechende
      *       Thymeleaf-Template gerendert wird.</li>
@@ -79,27 +83,28 @@ public class ErfassungController{
         Gruppe gruppe = gruppeService.findOrThrow(gruppeId);
         // Alle Studenten der Gruppe abrufen.
         List<Studenten> studentenListe = studentenService.findByGruppeId(gruppeId);
+        // Status "Anwesend" laden, mit dem jeder Student vorbelegt wird.
+        Status anwesend = statusService.findAnwesend();
         // Erstelle ein neues Formularobjekt, das die Erfassungsdaten kapselt.
-        ErfassungForm form = getErfassungForm(studentenListe);
+        ErfassungForm form = getErfassungForm(studentenListe, anwesend.getId());
 
         // Füge alle nötigen Model-Attribute hinzu
         model.addAttribute("anwesenheitForm", form);
-        model.addAttribute("gruppe", gruppe);
-        model.addAttribute("studentenListe", studentenListe);
-        model.addAttribute("statusListe", statusService.findAll());
+        addFormAttributes(model, gruppe, anwesend);
         return "anwesenheit";
     }
 
-    private static ErfassungForm getErfassungForm(List<Studenten> studentenListe) {
+    private static ErfassungForm getErfassungForm(List<Studenten> studentenListe, Integer anwesendStatusId) {
         ErfassungForm form = new ErfassungForm();
         // Initialisiere die Liste der Einträge
         List<ErfassungDTO> eintraege = new ArrayList<>();
-        // Für jeden Studenten wird ein entsprechendes DTO angelegt, in dem die Studenten-ID (und optional der Name) gesetzt wird.
+        // Für jeden Studenten wird ein entsprechendes DTO angelegt, in dem die Studenten-ID und der Name gesetzt werden.
         for (Studenten student : studentenListe) {
             ErfassungDTO dto = new ErfassungDTO();
             dto.setStudentenId(student.getId());
-            // Optional: Setze den Studentennamen für die Anzeige, falls diese Information benötigt wird.
             dto.setStudentenName(student.getVorname() + " " + student.getName());
+            // Standardmäßig ist jeder Student anwesend.
+            dto.setStatusId(anwesendStatusId);
             // Weitere Felder (z. B. Ankunftszeit, Kommentar etc.) werden leer gelassen und im Formular ausgefüllt.
             eintraege.add(dto);
         }
@@ -109,61 +114,92 @@ public class ErfassungController{
     }
 
     /**
+     * Fügt die Model-Attribute hinzu, die das Template "anwesenheit" zusätzlich zum Formular benötigt.
+     */
+    private void addFormAttributes(Model model, Gruppe gruppe, Status anwesend) {
+        model.addAttribute("gruppe", gruppe);
+        model.addAttribute("statusListe", statusService.findAll());
+        model.addAttribute("anwesendStatusId", anwesend.getId());
+    }
+
+    /**
+     * Zeigt das abgeschickte Formular erneut an, z. B. nach Validierungsfehlern.
+     * Die Studentennamen werden nicht mitgesendet und deshalb aus der Datenbank ergänzt.
+     */
+    private String showFormAgain(Integer gruppeId, ErfassungForm form, Model model) {
+        Gruppe gruppe = gruppeService.findOrThrow(gruppeId);
+        Map<Integer, String> namen = studentenService.findByGruppeId(gruppeId).stream()
+                .collect(Collectors.toMap(Studenten::getId, s -> s.getVorname() + " " + s.getName()));
+        if (form.getEintraege() == null) {
+            form.setEintraege(new ArrayList<>());
+        }
+        form.getEintraege().removeIf(Objects::isNull);
+        form.getEintraege().forEach(eintrag -> eintrag.setStudentenName(namen.get(eintrag.getStudentenId())));
+        addFormAttributes(model, gruppe, statusService.findAnwesend());
+        return "anwesenheit";
+    }
+
+    /**
      * Verarbeitet den POST-Request zum Speichern der Anwesenheitsdaten.
      * <p>
      * Diese Methode validiert die über das Formular empfangenen Daten. Falls Validierungsfehler vorliegen,
-     * wird der Benutzer zurück zur Eingabeseite (View "anwesenheit") geleitet, und es wird eine Fehlermeldung im Model abgelegt.
+     * wird das Formular mit den eingegebenen Daten und einer Fehlermeldung erneut angezeigt.
      * Andernfalls werden die Anwesenheitsdaten aus dem Formular an den Service delegiert, der die Geschäftslogik
      * (zum Beispiel Verspätungsberechnung und Speicherung der Erfassungen) umsetzt. Nach erfolgreicher Verarbeitung
-     * erfolgt eine Weiterleitung auf den entsprechenden View, basierend auf der ermittelten Gruppen-ID.
+     * erfolgt eine Weiterleitung zurück zum Formular der Gruppe.
      * </p>
      *
+     * @param gruppeId       Die ID der Gruppe, für die die Anwesenheit erfasst wird.
      * @param form           Das validierte Formularobjekt, welches die Liste der Anwesenheitsdaten (DTOs) enthält.
      * @param bindingResult  Enthält das Ergebnis der Validierung des Formulars. Bei Fehlern werden diese hier festgehalten.
      * @param model          Das Model, in das Fehlermeldungen oder andere View-bezogene Attribute eingefügt werden.
-     * @return               Ein Redirect-String, der den Benutzer entweder zur Gruppe ("/anwesenheit/{gruppeId}")
-     *                       oder zur Gruppenübersicht ("/gruppen") weiterleitet.
+     * @return               Ein Redirect auf "/anwesenheit/{gruppeId}" oder bei Fehlern der View "anwesenheit".
      */
-    @PostMapping("/speichern")
-    public String speichernAnwesenheit(@Valid ErfassungForm form, BindingResult bindingResult, 
-                                      Model model, RedirectAttributes redirectAttributes) {
+    @PostMapping("/{gruppeId}/speichern")
+    public String speichernAnwesenheit(@PathVariable Integer gruppeId,
+                                       @Valid @ModelAttribute("anwesenheitForm") ErfassungForm form,
+                                       BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) {
         // Logge den Start der Verarbeitung mit den übergebenen Form-Daten.
         logger.debug("speichernAnwesenheit() wurde aufgerufen mit Form-Daten: {}", form);
-        
+
         // Überprüfe, ob Validierungsfehler vorliegen.
         if (bindingResult.hasErrors()) {
             // Protokolliere jeden Validierungsfehler.
-            bindingResult.getAllErrors().forEach(error -> logger.error("Validierungsfehler: {}", error));
-            
-            // Sammle alle Validierungsfehler für eine detaillierte Anzeige
-            StringBuilder errorDetails = new StringBuilder("Bitte korrigieren Sie folgende Fehler:<br>");
-            bindingResult.getAllErrors().forEach(error -> 
-                errorDetails.append("• ").append(error.getDefaultMessage()).append("<br>")
-            );
-            
-            model.addAttribute("errorMessage", errorDetails.toString());
+            bindingResult.getAllErrors().forEach(error -> logger.warn("Validierungsfehler: {}", error));
+
+            // Sammle die Fehlermeldungen. Bei Konvertierungsfehlern enthält die Standardmeldung den
+            // eingegebenen Wert, daher wird stattdessen eine eigene Meldung verwendet.
+            List<String> errorDetails = bindingResult.getAllErrors().stream()
+                    .map(error -> error instanceof FieldError fieldError && fieldError.isBindingFailure()
+                            ? "Ungültiger Wert für " + fieldError.getField()
+                            : error.getDefaultMessage())
+                    .distinct()
+                    .toList();
+
+            model.addAttribute("errorMessage", "Bitte korrigieren Sie folgende Fehler:");
+            model.addAttribute("errorDetails", errorDetails);
             model.addAttribute("errorType", "validation");
-            return "anwesenheit";
+            return showFormAgain(gruppeId, form, model);
         }
-        
+
         try {
             // Delegiere die Verarbeitung der Anwesenheitsdaten an die Service-Schicht.
-            Integer gruppeId = erfassungService.erfassenAnwesenheiten(form.getEintraege());
-            
+            erfassungService.erfassenAnwesenheiten(form.getEintraege());
+
             // Logge den erfolgreichen Abschluss der Verarbeitung.
             logger.info("Anwesenheit für Gruppe {} wurde erfolgreich verarbeitet.", gruppeId);
-            
+
             // Erfolgsmeldung für den Benutzer
-            redirectAttributes.addFlashAttribute("successMessage", 
+            redirectAttributes.addFlashAttribute("successMessage",
                 "Anwesenheitsdaten wurden erfolgreich gespeichert!");
-            
-            return (gruppeId != null) ? "redirect:/anwesenheit/" + gruppeId : "redirect:/gruppen";
-            
+
+            return "redirect:/anwesenheit/" + gruppeId;
+
         } catch (Exception e) {
             logger.error("Fehler beim Speichern der Anwesenheitsdaten: {}", e.getMessage(), e);
             model.addAttribute("errorMessage", "Fehler beim Speichern der Daten. Bitte versuchen Sie es erneut.");
             model.addAttribute("errorType", "database");
-            return "anwesenheit";
+            return showFormAgain(gruppeId, form, model);
         }
     }
 }

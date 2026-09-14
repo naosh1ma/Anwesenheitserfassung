@@ -35,7 +35,7 @@ public class StatistikService {
      *     <li>Gesamte Anwesenheitsquote (in Prozent) basierend auf dem Anteil der "Anwesend"-Einträge</li>
      *     <li>Anzahl der "Entschuldigt"-Einträge</li>
      *     <li>Anzahl der "Unentschuldigt"-Einträge</li>
-     *     <li>Anzahl der "Krank"-Einträge</li>
+     *     <li>Anzahl der "Krankmeldung"-Einträge</li>
      *     <li>Anzahl der Verspätungen (Erfassungen, deren Kommentar das Wort "verspätung" enthält)</li>
      * </ul>
      *
@@ -67,7 +67,7 @@ public class StatistikService {
         return new StatistikErgebnis(student, prozent,
                 statusCount.getOrDefault("Entschuldigt", 0L),
                 statusCount.getOrDefault("Unentschuldigt", 0L),
-                statusCount.getOrDefault("Krank", 0L),
+                statusCount.getOrDefault("Krankmeldung", 0L),
                 verspaetet);
     }
 

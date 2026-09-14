@@ -1,5 +1,6 @@
 package com.art.erfassung.error;
 
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,10 +11,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 /**
  * Globaler Exception Handler für die Erfassung-Anwendung.
@@ -87,11 +88,10 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String handleConstraintViolationException(ConstraintViolationException ex, Model model) {
         logger.warn("Validierungsfehler: {}", ex.getMessage());
-        StringBuilder errorMessage = new StringBuilder("Validierungsfehler:<br>");
-        ex.getConstraintViolations().forEach(violation -> 
-            errorMessage.append("• ").append(violation.getMessage()).append("<br>")
-        );
-        model.addAttribute("errorMessage", errorMessage.toString());
+        String details = ex.getConstraintViolations().stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining("; "));
+        model.addAttribute("errorMessage", "Validierungsfehler: " + details);
         model.addAttribute("errorType", "validation");
         return "error";
     }
@@ -142,19 +142,5 @@ public class GlobalExceptionHandler {
         model.addAttribute("errorMessage", "Ein unerwarteter Fehler ist aufgetreten. Bitte kontaktieren Sie den Administrator.");
         model.addAttribute("errorType", "internal");
         return "error";
-    }
-
-    /**
-     * Behandelt Exceptions in Redirect-Szenarien (z.B. nach Formular-Submission).
-     *
-     * @param ex die ausgelöste Exception
-     * @param redirectAttributes Redirect-Attribute für Flash-Messages
-     * @return Redirect-String zur vorherigen Seite
-     */
-    @ExceptionHandler({IllegalArgumentException.class, DateTimeParseException.class})
-    public String handleRedirectExceptions(Exception ex, RedirectAttributes redirectAttributes) {
-        logger.warn("Fehler bei Redirect: {}", ex.getMessage());
-        redirectAttributes.addFlashAttribute("errorMessage", "Fehler: " + ex.getMessage());
-        return "redirect:/gruppen";
     }
 }

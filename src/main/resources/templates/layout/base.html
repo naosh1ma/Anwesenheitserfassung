@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" xmlns:th="http://www.thymeleaf.org" 
+<html lang="de" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
     <meta charset="UTF-8">
@@ -7,7 +7,7 @@
     <title th:text="${pageTitle} + ' - Erfassung'">Erfassung</title>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <link rel="icon" th:href="@{/images/logo.png}" type="image/png">
-    
+
     <!-- Additional head content -->
     <th:block layout:fragment="head"></th:block>
 </head>
@@ -28,20 +28,18 @@
                 <li><a th:href="@{/gruppen}" class="nav-link">
                     <span class="icon">📚</span> Gruppen
                 </a></li>
-                <li><a th:href="@{/anwesenheitsliste}" class="nav-link">
-                    <span class="icon">📋</span> Übersicht
-                </a></li>
-                <li><a th:href="@{/statistik}" class="nav-link">
-                    <span class="icon">📊</span> Statistiken
-                </a></li>
-                <li><a th:href="@{/logout}" class="nav-link logout">
-                    <span class="icon">🚪</span> Abmelden
-                </a></li>
+                <li>
+                    <form th:action="@{/logout}" method="post" class="logout-form">
+                        <button type="submit" class="nav-link logout">
+                            <span class="icon">🚪</span> Abmelden
+                        </button>
+                    </form>
+                </li>
             </ul>
             <div class="user-info">
                 <span class="user-name" th:text="${#authentication.name}">Benutzer</span>
                 <span class="user-role" th:if="${#authentication.authorities}">
-                    <span th:each="authority : ${#authentication.authorities}" 
+                    <span th:each="authority : ${#authentication.authorities}"
                           th:text="${authority.authority == 'ROLE_ADMIN' ? 'Administrator' : 'Lehrer'}"></span>
                 </span>
             </div>
@@ -52,14 +50,14 @@
     <main class="main-content">
         <!-- Success/Error Messages -->
         <div th:replace="fragments/messages :: all-messages"></div>
-        
+
         <!-- Page Content -->
         <div class="container">
             <div class="page-header">
                 <h1 th:text="${pageTitle}">Seitentitel</h1>
                 <p th:if="${pageDescription}" class="page-description" th:text="${pageDescription}"></p>
             </div>
-            
+
             <div class="page-content">
                 <th:block layout:fragment="content">
                     <!-- Page content goes here -->
@@ -81,7 +79,6 @@
                     <ul>
                         <li><a th:href="@{/willkommen}">Startseite</a></li>
                         <li><a th:href="@{/gruppen}">Gruppen</a></li>
-                        <li><a th:href="@{/statistik}">Statistiken</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">

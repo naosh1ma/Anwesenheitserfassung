@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="de" xmlns:th="http://www.thymeleaf.org" 
+<html lang="de" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}">
 <head>
-    <title th:if="${statistik.student() != null}"
+    <title th:if="${statistik.student != null}"
            th:text="|Statistik für ${statistik.student.vorname} ${statistik.student.name}|">
         Statistik
     </title>
@@ -12,7 +12,7 @@
     <div layout:fragment="content">
         <div class="statistics-container">
             <div class="statistics-header">
-                <h2 th:if="${statistik.student() != null}"
+                <h2 th:if="${statistik.student != null}"
                     th:text="|Statistik für ${statistik.student.vorname} ${statistik.student.name}|">
                     Statistik
                 </h2>
@@ -26,7 +26,7 @@
                         <h3>Gesamtanwesenheit</h3>
                     </div>
                     <div class="stat-value">
-                        <span th:text="${statistik.gesamtAnwesenheit()} + '%'">0%</span>
+                        <span th:text="${#numbers.formatDecimal(statistik.gesamtAnwesenheit, 1, 1)} + '%'">0%</span>
                     </div>
                     <div class="stat-description">
                         Durchschnittliche Anwesenheitsrate
@@ -39,7 +39,7 @@
                         <h3>Entschuldigte Fehlzeiten</h3>
                     </div>
                     <div class="stat-value">
-                        <span th:text="${statistik.entschuldigt()}">0</span>
+                        <span th:text="${statistik.entschuldigt}">0</span>
                     </div>
                     <div class="stat-description">
                         Anzahl entschuldigter Abwesenheiten
@@ -52,7 +52,7 @@
                         <h3>Unentschuldigte Fehlzeiten</h3>
                     </div>
                     <div class="stat-value">
-                        <span th:text="${statistik.unentschuldigt()}">0</span>
+                        <span th:text="${statistik.unentschuldigt}">0</span>
                     </div>
                     <div class="stat-description">
                         Anzahl unentschuldigter Abwesenheiten
@@ -65,7 +65,7 @@
                         <h3>Krankmeldungen</h3>
                     </div>
                     <div class="stat-value">
-                        <span th:text="${statistik.krank()}">0</span>
+                        <span th:text="${statistik.krank}">0</span>
                     </div>
                     <div class="stat-description">
                         Anzahl Krankmeldungen
@@ -78,7 +78,7 @@
                         <h3>Verspätungen</h3>
                     </div>
                     <div class="stat-value">
-                        <span th:text="${statistik.verspaetungen()}">0</span>
+                        <span th:text="${statistik.verspaetungen}">0</span>
                     </div>
                     <div class="stat-description">
                         Anzahl Verspätungen
@@ -101,7 +101,8 @@
                     <span class="icon">📚</span>
                     Zurück zu Gruppen
                 </a>
-                <a th:href="@{/anwesenheitsliste}" class="btn btn-primary">
+                <a th:if="${statistik != null and statistik.student != null}"
+                   th:href="@{/liste/{id}(id=${statistik.student.gruppeId})}" class="btn btn-primary">
                     <span class="icon">📋</span>
                     Übersicht anzeigen
                 </a>

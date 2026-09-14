@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="de" xmlns:th="http://www.thymeleaf.org" 
+<html lang="de" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}">
 <head>
@@ -23,12 +23,12 @@
                         <p class="group-description">Klicken Sie hier, um die Anwesenheit für diese Gruppe zu erfassen.</p>
                     </div>
                     <div class="group-card-actions">
-                        <a th:href="@{/anwesenheit/{id}(id=${gruppe.id})}" 
+                        <a th:href="@{/anwesenheit/{id}(id=${gruppe.id})}"
                            class="btn btn-primary group-action-btn">
                             <span class="icon">✅</span>
                             Anwesenheit erfassen
                         </a>
-                        <a th:href="@{/anwesenheitsliste?gruppeId={id}(id=${gruppe.id})}" 
+                        <a th:href="@{/liste/{id}(id=${gruppe.id})}"
                            class="btn btn-secondary group-action-btn">
                             <span class="icon">📋</span>
                             Übersicht anzeigen
@@ -45,20 +45,6 @@
                     <span class="icon">🏠</span>
                     Zur Startseite
                 </a>
-            </div>
-
-            <div class="quick-actions">
-                <h3>Schnellzugriff</h3>
-                <div class="quick-actions-grid">
-                    <a th:href="@{/statistik}" class="quick-action-card">
-                        <span class="quick-action-icon">📊</span>
-                        <span class="quick-action-text">Statistiken anzeigen</span>
-                    </a>
-                    <a th:href="@{/anwesenheitsliste}" class="quick-action-card">
-                        <span class="quick-action-icon">📋</span>
-                        <span class="quick-action-text">Alle Übersichten</span>
-                    </a>
-                </div>
             </div>
         </div>
     </div>

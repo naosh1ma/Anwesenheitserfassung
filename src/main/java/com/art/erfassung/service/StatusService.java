@@ -49,4 +49,15 @@ public class StatusService {
         // Suche nach dem Status, andernfalls Exception werfen
         return statusRepository.findById(id).orElseThrow();
     }
+
+    /**
+     * Gibt den Status "Anwesend" zurück, mit dem das Erfassungsformular vorbelegt wird.
+     *
+     * @return das {@link Status} Objekt mit der Bezeichnung "Anwesend"
+     * @throws IllegalStateException wenn der Status in der Datenbank fehlt
+     */
+    public Status findAnwesend() {
+        return statusRepository.findByBezeichnung("Anwesend")
+                .orElseThrow(() -> new IllegalStateException("Status 'Anwesend' fehlt in der Datenbank"));
+    }
 }

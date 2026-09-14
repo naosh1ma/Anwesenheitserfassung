@@ -14,7 +14,9 @@
         <div class="user-info">
             <span th:if="${isAdmin}" class="role-badge admin">Administrator</span>
             <span th:unless="${isAdmin}" class="role-badge teacher">Lehrer</span>
-            <a th:href="@{/logout}" class="logout-link">Abmelden</a>
+            <form th:action="@{/logout}" method="post" class="logout-form">
+                <button type="submit" class="logout-link">Abmelden</button>
+            </form>
         </div>
     </header>
 
@@ -29,30 +31,6 @@
                 <span class="icon">📚</span>
                 Gruppen verwalten
             </a>
-            
-            <a th:if="${isAdmin}" th:href="@{/studenten}" class="btn btn-secondary">
-                <span class="icon">👥</span>
-                Studenten verwalten
-            </a>
-            
-            <a th:href="@{/statistik}" class="btn btn-secondary">
-                <span class="icon">📊</span>
-                Statistiken anzeigen
-            </a>
-        </div>
-
-        <div class="quick-actions">
-            <h3>Schnellzugriff</h3>
-            <div class="quick-links">
-                <a th:href="@{/anwesenheit/1}" class="quick-link">
-                    <span class="icon">✅</span>
-                    Anwesenheit erfassen
-                </a>
-                <a th:href="@{/liste}" class="quick-link">
-                    <span class="icon">📋</span>
-                    Anwesenheitsliste
-                </a>
-            </div>
         </div>
     </main>
 </div>

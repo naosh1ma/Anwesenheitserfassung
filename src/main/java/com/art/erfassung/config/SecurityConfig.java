@@ -36,11 +36,9 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(authz -> authz
                 // Public endpoints
-                .requestMatchers("/", "/login", "/css/**", "/images/**", "/js/**").permitAll()
-                // Admin endpoints
-                .requestMatchers("/gruppen/**", "/studenten/**", "/statistik/**").hasRole("ADMIN")
-                // Teacher endpoints
-                .requestMatchers("/anwesenheit/**", "/liste/**").hasAnyRole("TEACHER", "ADMIN")
+                .requestMatchers("/", "/login", "/error", "/css/**", "/images/**", "/js/**").permitAll()
+                // Attendance and statistics: teachers and admins
+                .requestMatchers("/gruppen/**", "/anwesenheit/**", "/liste/**", "/studenten/**").hasAnyRole("TEACHER", "ADMIN")
                 // All other requests require authentication
                 .anyRequest().authenticated()
             )
@@ -50,11 +48,11 @@ public class SecurityConfig {
                 .failureUrl("/login?error=true")
                 .permitAll()
             )
+            // CSRF protection is enabled (Spring Security default), so logout must be a POST request
             .logout(logout -> logout
                 .logoutSuccessUrl("/login?logout=true")
                 .permitAll()
-            )
-            .csrf(csrf -> csrf.disable()); // Disable CSRF for development - enable in production
+            );
 
         return http.build();
     }

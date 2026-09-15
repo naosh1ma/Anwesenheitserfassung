@@ -53,8 +53,17 @@
                     <th class="month__name" scope="col">Student</th>
                     <th scope="col" th:each="tag : ${tage}"
                         th:classappend="${tag == heute} ? 'is-today' : (${tag.dayOfWeek.value >= 6} ? 'is-weekend')">
-                        <span class="month__weekday" th:text="${#strings.substring(#temporals.dayOfWeekName(tag), 0, 2)}">Mo</span>
-                        <span th:text="${tag.dayOfMonth}">1</span>
+                        <!-- Vergangene Tage und heute öffnen das Erfassungsformular für diesen Tag -->
+                        <a th:unless="${tag.isAfter(heute)}" class="month__day-link"
+                           th:href="@{/anwesenheit/{id}(id=${gruppe.id},datum=${tag})}"
+                           th:title="|Anwesenheit für ${#temporals.format(tag, 'dd.MM.yyyy')} erfassen|">
+                            <span class="month__weekday" th:text="${#strings.substring(#temporals.dayOfWeekName(tag), 0, 2)}">Mo</span>
+                            <span th:text="${tag.dayOfMonth}">1</span>
+                        </a>
+                        <th:block th:if="${tag.isAfter(heute)}">
+                            <span class="month__weekday" th:text="${#strings.substring(#temporals.dayOfWeekName(tag), 0, 2)}">Mo</span>
+                            <span th:text="${tag.dayOfMonth}">1</span>
+                        </th:block>
                     </th>
                 </tr>
                 </thead>
@@ -71,12 +80,16 @@
                         th:title="${erfassung != null} ? ${erfassung.status.bezeichnung
                             + (erfassung.ankunftszeit != null ? ', Ankunft ' + erfassung.ankunftszeit : '')
                             + (erfassung.verlassenUm != null ? ', Verlassen ' + erfassung.verlassenUm : '')}">
-                        <th:block th:if="${erfassung != null}">
-                            <span th:if="${erfassung.status.bezeichnung == 'Anwesend'}" class="dot dot--present"></span>
-                            <span th:unless="${erfassung.status.bezeichnung == 'Anwesend'}" class="chip"
-                                  th:classappend="|chip--${#strings.toLowerCase(erfassung.status.bezeichnung)}|"
-                                  th:text="${#strings.substring(erfassung.status.bezeichnung, 0, 1)}">E</span>
-                        </th:block>
+                        <!-- Ein Klick auf die Zelle öffnet den Tag im Erfassungsformular (per Tastatur über die Spaltenüberschrift) -->
+                        <a th:unless="${tag.isAfter(heute)}" class="month__cell-link" tabindex="-1" aria-hidden="true"
+                           th:href="@{/anwesenheit/{id}(id=${gruppe.id},datum=${tag})}">
+                            <th:block th:if="${erfassung != null}">
+                                <span th:if="${erfassung.status.bezeichnung == 'Anwesend'}" class="dot dot--present"></span>
+                                <span th:unless="${erfassung.status.bezeichnung == 'Anwesend'}" class="chip"
+                                      th:classappend="|chip--${#strings.toLowerCase(erfassung.status.bezeichnung)}|"
+                                      th:text="${#strings.substring(erfassung.status.bezeichnung, 0, 1)}">E</span>
+                            </th:block>
+                        </a>
                     </td>
                 </tr>
                 </tbody>

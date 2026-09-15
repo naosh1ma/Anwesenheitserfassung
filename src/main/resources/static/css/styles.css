@@ -586,8 +586,54 @@ tr.inaktiv th {
     max-width: 720px;
 }
 
-.form-grid__actions {
+.form-grid__actions,
+.form-grid__wide {
     grid-column: 1 / -1;
+}
+
+fieldset {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+legend {
+    padding: 0;
+}
+
+.check-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+.check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.check:hover {
+    background: var(--surface-muted);
+}
+
+.check:has(input:checked) {
+    border-color: var(--accent-ring);
+    background: var(--accent-faint);
+}
+
+.check input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--accent);
 }
 
 .field {
@@ -957,6 +1003,33 @@ tr.inaktiv th {
     color: var(--text);
 }
 
+.month-switch__step.is-disabled {
+    color: var(--placeholder);
+    cursor: default;
+}
+
+.month-switch__step.is-disabled:hover {
+    background: transparent;
+    color: var(--placeholder);
+}
+
+.month-switch__input {
+    height: 100%;
+    padding: 0 10px;
+    border: 0;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    background: transparent;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.month-switch__input:focus {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--accent-ring);
+}
+
 .month-switch__label {
     min-width: 140px;
     padding: 0 12px;
@@ -994,6 +1067,33 @@ tr.inaktiv th {
     font-size: 13px;
     font-weight: 500;
     line-height: 1.2;
+}
+
+.month__day-link {
+    height: 47px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    color: inherit;
+}
+
+.month__day-link:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.month__cell-link {
+    height: 37px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+}
+
+.month__cell-link:hover {
+    background: var(--accent-soft);
+    text-decoration: none;
 }
 
 .month__weekday {

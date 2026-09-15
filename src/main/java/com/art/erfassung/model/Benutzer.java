@@ -4,11 +4,15 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Entität zur Repräsentation eines Benutzers.
  * <p>
  * Diese Klasse bildet die Tabelle "benutzer" in der Datenbank ab und enthält
- * grundlegende Informationen zum Benutzer, wie Benutzernamen, Passwort-Hash, Nachname, Vorname und Rolle.
+ * grundlegende Informationen zum Benutzer, wie Benutzernamen, Passwort-Hash, Nachname, Vorname, Rolle
+ * und die Gruppen, die ein Lehrer sehen darf.
  * </p>
  */
 @Entity
@@ -39,6 +43,13 @@ public class Benutzer {
     @Column(name = "rolle", length = 20)
     private Rolle rolle;
 
+    // Gruppen, die ein Lehrer sehen und erfassen darf (Flyway-Migration V7); Administratoren sehen alle Gruppen
+    @ManyToMany
+    @JoinTable(name = "benutzer_gruppe",
+            joinColumns = @JoinColumn(name = "benutzer_id"),
+            inverseJoinColumns = @JoinColumn(name = "gruppe_id"))
+    private Set<Gruppe> gruppen = new HashSet<>();
+
     protected Benutzer() {}
 
     public Benutzer(String benutzername, String vorname, String name, Rolle rolle) {
@@ -55,6 +66,8 @@ public class Benutzer {
     public String getName() { return name; }
     public String getVorname() { return vorname; }
     public Rolle getRolle() { return rolle; }
+    public Set<Gruppe> getGruppen() { return gruppen; }
+    public boolean isAdmin() { return rolle == Rolle.ADMIN; }
 
     public void setPasswort(String passwort) { this.passwort = passwort; }
     public void setRolle(Rolle rolle) { this.rolle = rolle; }

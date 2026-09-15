@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>Gruppen zuweisen</title>
+</head>
+<body>
+<div layout:fragment="content" class="stack">
+    <div class="page-head">
+        <div class="page-head__main">
+            <nav class="breadcrumb" aria-label="Pfad">
+                <a th:href="@{/admin/benutzer}">Benutzer</a>
+                <span class="breadcrumb__sep">/</span>
+                <span th:text="${benutzer.benutzername}">login</span>
+            </nav>
+            <h1 class="page-head__title">Gruppen zuweisen</h1>
+            <p class="page-head__text"
+               th:text="|${benutzer.vorname} ${benutzer.name} sieht nur die ausgewählten Gruppen und kann nur für diese Anwesenheit erfassen.|">
+                Der Lehrer sieht nur die ausgewählten Gruppen.
+            </p>
+        </div>
+    </div>
+
+    <div class="card empty" th:if="${benutzer.admin}">
+        <p class="muted">Administratoren sehen immer alle Gruppen, eine Zuweisung ist nicht nötig.</p>
+        <a th:href="@{/admin/benutzer}" class="btn btn--secondary">Zurück zu den Benutzern</a>
+    </div>
+
+    <div class="card empty" th:if="${!benutzer.admin and alleGruppen.empty}">
+        <h2 class="empty__title">Noch keine Gruppen</h2>
+        <p class="muted">Legen Sie zuerst Gruppen an.</p>
+        <a th:href="@{/admin/gruppen}" class="btn btn--primary">Gruppen verwalten</a>
+    </div>
+
+    <form th:if="${!benutzer.admin and !alleGruppen.empty}" class="card" method="post"
+          th:action="@{/admin/benutzer/{id}/gruppen(id=${benutzer.id})}">
+        <div class="card__head">
+            <span class="card__title">Gruppen</span>
+            <span class="muted text-sm">Ohne Auswahl sieht der Lehrer keine Gruppen.</span>
+        </div>
+        <div class="card--padded">
+            <div class="check-grid">
+                <label class="check" th:each="g : ${alleGruppen}">
+                    <input type="checkbox" name="gruppenIds" th:value="${g.id}" th:checked="${zugewieseneIds.contains(g.id)}">
+                    <span th:text="${g.bezeichnung}">Gruppe</span>
+                </label>
+            </div>
+        </div>
+        <div class="card__foot">
+            <a th:href="@{/admin/benutzer}" class="btn btn--secondary">Abbrechen</a>
+            <button type="submit" class="btn btn--primary">Speichern</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>

@@ -68,6 +68,21 @@ public class StudentenService {
     }
 
     /**
+     * Liefert die Studenten einer Gruppe, die an einem Tag aktiv waren, sortiert nach Name.
+     * Ein Student, der an diesem Tag oder früher deaktiviert wurde, zählt nicht dazu.
+     *
+     * @param gruppeId die ID der Gruppe
+     * @param tag      der Tag
+     * @return die an diesem Tag aktiven Studenten der Gruppe
+     */
+    public List<Studenten> findAktiveAmTag(Integer gruppeId, LocalDate tag) {
+        return studentenRepository.findByGruppeId(gruppeId).stream()
+                .filter(student -> student.getDeaktiviertAm() == null || student.getDeaktiviertAm().isAfter(tag))
+                .sorted(NACH_NAME)
+                .toList();
+    }
+
+    /**
      * Liefert alle Studenten einer Gruppe: zuerst die aktiven, dann die deaktivierten, jeweils nach Name sortiert.
      *
      * @param gruppeId die ID der Gruppe

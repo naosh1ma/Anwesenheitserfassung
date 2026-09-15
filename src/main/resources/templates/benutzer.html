@@ -22,6 +22,7 @@
                     <th>Benutzername</th>
                     <th>Name</th>
                     <th>Rolle</th>
+                    <th>Gruppen</th>
                     <th>Neues Passwort</th>
                     <th class="table__actions"><span class="visually-hidden">Aktionen</span></th>
                 </tr>
@@ -35,6 +36,14 @@
                               th:text="${benutzer.rolle?.bezeichnung}">Rolle</span>
                     </td>
                     <td>
+                        <span th:if="${benutzer.admin}" class="muted">Alle Gruppen</span>
+                        <th:block th:unless="${benutzer.admin}">
+                            <span th:if="${benutzer.gruppen.empty}" class="inaktiv-hinweis">Keine Gruppen</span>
+                            <span th:unless="${benutzer.gruppen.empty}"
+                                  th:text="${#strings.listJoin(#lists.sort(benutzer.gruppen.![bezeichnung]), ', ')}">Gruppen</span>
+                        </th:block>
+                    </td>
+                    <td>
                         <form th:action="@{/admin/benutzer/{id}/passwort(id=${benutzer.id})}" method="post" class="inline-form">
                             <input type="password" name="passwort" class="input" required minlength="8"
                                    placeholder="mind. 8 Zeichen" autocomplete="new-password"
@@ -43,14 +52,18 @@
                         </form>
                     </td>
                     <td class="table__actions">
-                        <!-- Das eigene Konto kann nicht gelöscht werden -->
-                        <form th:unless="${benutzer.benutzername == #authentication.name}"
-                              th:action="@{/admin/benutzer/{id}/loeschen(id=${benutzer.id})}" method="post"
-                              class="inline-form inline-form--end"
-                              onsubmit="return confirm('Diesen Benutzer wirklich löschen?');">
-                            <button type="submit" class="btn btn--danger">Löschen</button>
-                        </form>
-                        <span th:if="${benutzer.benutzername == #authentication.name}" class="muted text-sm">Ihr Konto</span>
+                        <div class="inline-form inline-form--end">
+                            <a th:unless="${benutzer.admin}" th:href="@{/admin/benutzer/{id}/gruppen(id=${benutzer.id})}"
+                               class="btn btn--secondary">Gruppen zuweisen</a>
+                            <!-- Das eigene Konto kann nicht gelöscht werden -->
+                            <form th:unless="${benutzer.benutzername == #authentication.name}"
+                                  th:action="@{/admin/benutzer/{id}/loeschen(id=${benutzer.id})}" method="post"
+                                  class="inline-form"
+                                  onsubmit="return confirm('Diesen Benutzer wirklich löschen?');">
+                                <button type="submit" class="btn btn--danger">Löschen</button>
+                            </form>
+                            <span th:if="${benutzer.benutzername == #authentication.name}" class="muted text-sm">Ihr Konto</span>
+                        </div>
                     </td>
                 </tr>
                 </tbody>
@@ -83,6 +96,15 @@
                 <label class="label" for="passwort">Passwort (mindestens 8 Zeichen)</label>
                 <input type="password" class="input" th:field="*{passwort}" required minlength="8" autocomplete="new-password">
             </div>
+            <fieldset class="field form-grid__wide" th:unless="${alleGruppen.empty}">
+                <legend class="label">Gruppen (nur für Lehrer)</legend>
+                <div class="check-grid">
+                    <label class="check" th:each="g : ${alleGruppen}">
+                        <input type="checkbox" th:field="*{gruppenIds}" th:value="${g.id}">
+                        <span th:text="${g.bezeichnung}">Gruppe</span>
+                    </label>
+                </div>
+            </fieldset>
             <div class="form-grid__actions">
                 <button type="submit" class="btn btn--primary">Benutzer anlegen</button>
             </div>

@@ -3,9 +3,10 @@ package com.art.erfassung.controller;
 import com.art.erfassung.dto.GruppeDTO;
 import com.art.erfassung.mapper.GruppeMapper;
 import com.art.erfassung.model.Gruppe;
-import com.art.erfassung.service.GruppeService;
 import com.art.erfassung.service.StudentenService;
+import com.art.erfassung.service.ZugriffService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,15 +19,16 @@ import java.util.Map;
 /**
  * Controller für die Gruppenübersicht.
  * <p>
- * Zeigt alle Gruppen mit der Anzahl ihrer aktiven Studenten unter "/gruppen" an.
+ * Zeigt die Gruppen des angemeldeten Benutzers mit der Anzahl ihrer aktiven Studenten unter "/gruppen" an:
+ * alle Gruppen für Administratoren, die zugewiesenen Gruppen für Lehrer.
  * </p>
  */
 @Controller
 @RequestMapping
 public class GruppeController {
 
-    // Service zur Verwaltung von Gruppen.
-    private final GruppeService gruppeService;
+    // Service, der die für den Benutzer sichtbaren Gruppen liefert.
+    private final ZugriffService zugriffService;
 
     // Service zur Abfrage der Studenten einer Gruppe.
     private final StudentenService studentenService;
@@ -35,25 +37,25 @@ public class GruppeController {
     private final GruppeMapper gruppeMapper;
 
     @Autowired
-    public GruppeController(GruppeService gruppeService, StudentenService studentenService, GruppeMapper gruppeMapper) {
-        this.gruppeService = gruppeService;
+    public GruppeController(ZugriffService zugriffService, StudentenService studentenService, GruppeMapper gruppeMapper) {
+        this.zugriffService = zugriffService;
         this.studentenService = studentenService;
         this.gruppeMapper = gruppeMapper;
     }
 
     /**
-     * Zeigt die Gruppenübersicht mit der Liste aller Gruppen an.
+     * Zeigt die Gruppenübersicht mit den Gruppen an, die der Benutzer sehen darf.
      * <p>
-     * Es werden alle Gruppen über den GruppeService abgerufen und zusammen mit der Anzahl
-     * ihrer aktiven Studenten dem Model hinzugefügt.
+     * Die Gruppen werden zusammen mit der Anzahl ihrer aktiven Studenten dem Model hinzugefügt.
      * </p>
      *
-     * @param model das Model, das die Daten für die View enthält
+     * @param authentication der angemeldete Benutzer
+     * @param model          das Model, das die Daten für die View enthält
      * @return den Namen der View "gruppen"
      */
     @GetMapping("/gruppen")
-    public String showDashboard(Model model) {
-        List<Gruppe> gruppen = gruppeService.findAll();
+    public String showDashboard(Authentication authentication, Model model) {
+        List<Gruppe> gruppen = zugriffService.sichtbareGruppen(authentication);
         // Anzahl der aktiven Studenten je Gruppe
         Map<Integer, Integer> studentenAnzahl = new HashMap<>();
         for (Gruppe gruppe : gruppen) {

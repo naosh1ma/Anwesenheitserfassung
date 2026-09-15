@@ -69,7 +69,7 @@ public class ErfassungServiceTest {
     @Test
     public void testErfassenAnwesenheiten_NewErfassung_StoresTimesAndComment() {
         // Act
-        erfassungService.erfassenAnwesenheiten(1, List.of(dto(1, 1, "08:15", "16:30", "Test Kommentar")));
+        erfassungService.erfassenAnwesenheiten(1, LocalDate.now(), List.of(dto(1, 1, "08:15", "16:30", "Test Kommentar")));
 
         // Assert
         List<Erfassung> gespeichert = captureSaved();
@@ -93,7 +93,7 @@ public class ErfassungServiceTest {
                 .thenReturn(List.of(vorhanden));
 
         // Act
-        erfassungService.erfassenAnwesenheiten(1, List.of(dto(1, 1, "09:00", "", "Neuer Kommentar")));
+        erfassungService.erfassenAnwesenheiten(1, LocalDate.now(), List.of(dto(1, 1, "09:00", "", "Neuer Kommentar")));
 
         // Assert
         Erfassung erfassung = captureSaved().get(0);
@@ -106,7 +106,7 @@ public class ErfassungServiceTest {
     @Test
     public void testErfassenAnwesenheiten_EmptyValues_StoredAsNull() {
         // Act
-        erfassungService.erfassenAnwesenheiten(1, List.of(dto(1, 1, "", null, "  ")));
+        erfassungService.erfassenAnwesenheiten(1, LocalDate.now(), List.of(dto(1, 1, "", null, "  ")));
 
         // Assert
         Erfassung erfassung = captureSaved().get(0);
@@ -119,7 +119,7 @@ public class ErfassungServiceTest {
     public void testErfassenAnwesenheiten_StudentFromOtherGroup_Throws() {
         // Act & Assert
         IllegalArgumentException fehler = assertThrows(IllegalArgumentException.class,
-                () -> erfassungService.erfassenAnwesenheiten(1, List.of(dto(99, 1, "", "", ""))));
+                () -> erfassungService.erfassenAnwesenheiten(1, LocalDate.now(), List.of(dto(99, 1, "", "", ""))));
         assertTrue(fehler.getMessage().contains("gehört nicht zu dieser Gruppe"));
         verify(erfassungRepository, never()).saveAll(any());
     }
@@ -127,7 +127,7 @@ public class ErfassungServiceTest {
     @Test
     public void testErfassenAnwesenheiten_LeaveBeforeArrival_Throws() {
         assertThrows(IllegalArgumentException.class,
-                () -> erfassungService.erfassenAnwesenheiten(1, List.of(dto(1, 1, "10:00", "09:00", ""))));
+                () -> erfassungService.erfassenAnwesenheiten(1, LocalDate.now(), List.of(dto(1, 1, "10:00", "09:00", ""))));
         verify(erfassungRepository, never()).saveAll(any());
     }
 
@@ -139,7 +139,7 @@ public class ErfassungServiceTest {
                 .thenReturn(List.of(vorhanden));
 
         // Act
-        assertThrows(IllegalArgumentException.class, () -> erfassungService.erfassenAnwesenheiten(1,
+        assertThrows(IllegalArgumentException.class, () -> erfassungService.erfassenAnwesenheiten(1, LocalDate.now(),
                 List.of(dto(1, 1, "08:00", "", "Neu"), dto(99, 1, "", "", ""))));
 
         // Assert
@@ -154,9 +154,42 @@ public class ErfassungServiceTest {
 
         // Act & Assert
         IllegalArgumentException fehler = assertThrows(IllegalArgumentException.class,
-                () -> erfassungService.erfassenAnwesenheiten(1, List.of(dto(1, 1, "", "", ""))));
+                () -> erfassungService.erfassenAnwesenheiten(1, LocalDate.now(), List.of(dto(1, 1, "", "", ""))));
         assertTrue(fehler.getMessage().contains("deaktiviert"));
         verify(erfassungRepository, never()).saveAll(any());
+    }
+
+    @Test
+    public void testErfassenAnwesenheiten_PastDay_StoresRecordForThatDay() {
+        // Arrange
+        LocalDate gestern = LocalDate.now().minusDays(1);
+
+        // Act
+        erfassungService.erfassenAnwesenheiten(1, gestern, List.of(dto(1, 1, "", "", "")));
+
+        // Assert: existing records are looked up for that day and the new record gets that date
+        assertEquals(gestern, captureSaved().get(0).getDatum());
+        verify(erfassungRepository).findByStudenten_GruppeIdAndDatumBetween(1, gestern, gestern);
+    }
+
+    @Test
+    public void testErfassenAnwesenheiten_FutureDay_Throws() {
+        IllegalArgumentException fehler = assertThrows(IllegalArgumentException.class, () -> erfassungService
+                .erfassenAnwesenheiten(1, LocalDate.now().plusDays(1), List.of(dto(1, 1, "", "", ""))));
+        assertTrue(fehler.getMessage().contains("zukünftige"));
+        verify(erfassungRepository, never()).saveAll(any());
+    }
+
+    @Test
+    public void testErfassenAnwesenheiten_DayBeforeDeactivation_IsAllowed() {
+        // Arrange: deactivated today, so yesterday the student was still active
+        testStudent.setDeaktiviertAm(LocalDate.now());
+
+        // Act
+        erfassungService.erfassenAnwesenheiten(1, LocalDate.now().minusDays(1), List.of(dto(1, 1, "", "", "")));
+
+        // Assert
+        assertEquals(1, captureSaved().size());
     }
 
     @Test

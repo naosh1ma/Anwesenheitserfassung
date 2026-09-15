@@ -1,9 +1,12 @@
 package com.art.erfassung.tests;
 
+import com.art.erfassung.model.Benutzer;
 import com.art.erfassung.model.Erfassung;
 import com.art.erfassung.model.Gruppe;
+import com.art.erfassung.model.Rolle;
 import com.art.erfassung.model.Status;
 import com.art.erfassung.model.Studenten;
+import com.art.erfassung.repository.BenutzerRepository;
 import com.art.erfassung.repository.ErfassungRepository;
 import com.art.erfassung.repository.GruppeRepository;
 import com.art.erfassung.repository.StatusRepository;
@@ -32,6 +35,7 @@ import java.util.regex.Pattern;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.logout;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -68,6 +72,9 @@ public class WebFlowIntegrationTest {
     @Autowired
     private TransactionTemplate transactionTemplate;
 
+    @Autowired
+    private BenutzerRepository benutzerRepository;
+
     private Gruppe gruppe;
     private Studenten student;
     private Status anwesend;
@@ -80,10 +87,15 @@ public class WebFlowIntegrationTest {
         krankmeldung = statusRepository.findByBezeichnung("Krankmeldung").orElseThrow();
         gruppe = gruppeRepository.save(new Gruppe("Testgruppe"));
         student = studentenRepository.save(new Studenten("Mustermann", "Max", gruppe));
+        // The user "teacher" of the requests exists in the database and is assigned to the test group
+        Benutzer lehrer = new Benutzer("teacher", "Tina", "Teacher", Rolle.TEACHER);
+        lehrer.getGruppen().add(gruppe);
+        benutzerRepository.save(lehrer);
     }
 
     @AfterEach
     public void cleanup() {
+        benutzerRepository.findByBenutzername("teacher").ifPresent(benutzerRepository::delete);
         erfassungRepository.deleteAll();
         studentenRepository.deleteAll();
         gruppeRepository.deleteAll();
@@ -300,8 +312,112 @@ public class WebFlowIntegrationTest {
         }
     }
 
+    @Test
+    public void testGruppen_TeacherSeesOnlyAssignedGroups_AdminSeesAll() throws Exception {
+        // Arrange
+        gruppeRepository.save(new Gruppe("Fremde Gruppe"));
+
+        // Act & Assert
+        mockMvc.perform(get("/gruppen").with(teacher()))
+                .andExpect(content().string(containsString("Testgruppe")))
+                .andExpect(content().string(not(containsString("Fremde Gruppe"))));
+        mockMvc.perform(get("/gruppen").with(admin()))
+                .andExpect(content().string(containsString("Testgruppe")))
+                .andExpect(content().string(containsString("Fremde Gruppe")));
+    }
+
+    @Test
+    public void testNotAssignedGroup_IsForbiddenForTeacher() throws Exception {
+        // Arrange
+        Gruppe fremdeGruppe = gruppeRepository.save(new Gruppe("Fremde Gruppe"));
+        Studenten fremderStudent = studentenRepository.save(new Studenten("Fremd", "Fritz", fremdeGruppe));
+
+        // Act & Assert: form, monthly list, statistics and saving are all refused
+        mockMvc.perform(get("/anwesenheit/{id}", fremdeGruppe.getId()).with(teacher())).andExpect(status().isForbidden());
+        mockMvc.perform(get("/liste/{id}", fremdeGruppe.getId()).with(teacher())).andExpect(status().isForbidden());
+        mockMvc.perform(get("/studenten/{id}", fremderStudent.getId()).with(teacher())).andExpect(status().isForbidden());
+        mockMvc.perform(post("/anwesenheit/{id}/speichern", fremdeGruppe.getId()).with(teacher()).with(csrf())
+                        .param("eintraege[0].studentenId", String.valueOf(fremderStudent.getId()))
+                        .param("eintraege[0].statusId", String.valueOf(anwesend.getId())))
+                .andExpect(status().isForbidden());
+        assertEquals(0, erfassungRepository.count());
+
+        // Assert: administrators can open every group
+        mockMvc.perform(get("/anwesenheit/{id}", fremdeGruppe.getId()).with(admin())).andExpect(status().isOk());
+    }
+
+    @Test
+    public void testSpeichern_PastDay_StoresRecordForThatDay() throws Exception {
+        // Arrange
+        LocalDate gestern = LocalDate.now().minusDays(1);
+        String html = render(get("/anwesenheit/{id}", gruppe.getId()).param("datum", gestern.toString()));
+        assertTrue(html.contains("value=\"" + gestern + "\""));
+        assertTrue(html.contains("Nachtrag"));
+
+        // Act
+        mockMvc.perform(post("/anwesenheit/{id}/speichern", gruppe.getId()).with(teacher()).with(csrf())
+                        .param("datum", gestern.toString())
+                        .param("eintraege[0].studentenId", String.valueOf(student.getId()))
+                        .param("eintraege[0].statusId", String.valueOf(krankmeldung.getId())))
+                .andExpect(redirectedUrl("/anwesenheit/" + gruppe.getId() + "?datum=" + gestern));
+
+        // Assert: the record has that date, and reopening the day shows the saved status
+        Erfassung gespeichert = transactionTemplate.execute(tx ->
+                erfassungRepository.findByStudenten_id(student.getId()).get(0));
+        assertEquals(gestern, gespeichert.getDatum());
+        String erneut = render(get("/anwesenheit/{id}", gruppe.getId()).param("datum", gestern.toString()));
+        assertTrue(inputTag(erneut, "status_0_" + krankmeldung.getId()).contains("checked"));
+    }
+
+    @Test
+    public void testFutureDay_IsRejected() throws Exception {
+        // Arrange
+        String morgen = LocalDate.now().plusDays(1).toString();
+
+        // Act & Assert: opening a future day goes back to today
+        mockMvc.perform(get("/anwesenheit/{id}", gruppe.getId()).param("datum", morgen).with(teacher()))
+                .andExpect(redirectedUrl("/anwesenheit/" + gruppe.getId()))
+                .andExpect(flash().attribute("errorMessage", containsString("zukünftige Tage")));
+
+        // Act & Assert: saving for a future day stores nothing
+        mockMvc.perform(post("/anwesenheit/{id}/speichern", gruppe.getId()).with(teacher()).with(csrf())
+                        .param("datum", morgen)
+                        .param("eintraege[0].studentenId", String.valueOf(student.getId()))
+                        .param("eintraege[0].statusId", String.valueOf(anwesend.getId())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("zukünftige Tage")));
+        assertEquals(0, erfassungRepository.count());
+    }
+
+    @Test
+    public void testPastDay_ShowsStudentDeactivatedLater() throws Exception {
+        // Arrange: deactivated today, so the student still belongs to yesterday's form
+        student.setDeaktiviertAm(LocalDate.now());
+        studentenRepository.save(student);
+        String gestern = LocalDate.now().minusDays(1).toString();
+
+        // Act & Assert
+        assertTrue(render(get("/anwesenheit/{id}", gruppe.getId()).param("datum", gestern)).contains("Max Mustermann"));
+        assertFalse(render(get("/anwesenheit/{id}", gruppe.getId())).contains("Max Mustermann"));
+        mockMvc.perform(post("/anwesenheit/{id}/speichern", gruppe.getId()).with(teacher()).with(csrf())
+                        .param("datum", gestern)
+                        .param("eintraege[0].studentenId", String.valueOf(student.getId()))
+                        .param("eintraege[0].statusId", String.valueOf(anwesend.getId())))
+                .andExpect(redirectedUrl("/anwesenheit/" + gruppe.getId() + "?datum=" + gestern));
+    }
+
+    @Test
+    public void testMonatsliste_DaysLinkToTheirForm() throws Exception {
+        String html = render(get("/liste/{id}", gruppe.getId()));
+        assertTrue(html.contains("href=\"/anwesenheit/" + gruppe.getId() + "?datum=" + LocalDate.now() + "\""));
+    }
+
     private static RequestPostProcessor teacher() {
         return user("teacher").roles("TEACHER");
+    }
+
+    private static RequestPostProcessor admin() {
+        return user("admin").roles("ADMIN");
     }
 
     private String render(MockHttpServletRequestBuilder request) throws Exception {

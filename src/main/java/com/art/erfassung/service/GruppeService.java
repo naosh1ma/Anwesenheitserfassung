@@ -20,6 +20,10 @@ import java.util.NoSuchElementException;
 @Service
 public class GruppeService {
 
+    // Sortierung nach Bezeichnung, unabhängig von Groß- und Kleinschreibung
+    private static final Comparator<Gruppe> NACH_BEZEICHNUNG =
+            Comparator.comparing(Gruppe::getBezeichnung, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+
     // Repository zur Verwaltung der Gruppen-Daten
     private final GruppeRepository gruppeRepository;
     // Repository zur Prüfung, ob eine Gruppe noch Studenten enthält
@@ -53,7 +57,19 @@ public class GruppeService {
     public List<Gruppe> findAll() {
         // Abrufen aller Gruppen aus dem Repository
         return gruppeRepository.findAll().stream()
-                .sorted(Comparator.comparing(Gruppe::getBezeichnung, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .sorted(NACH_BEZEICHNUNG)
+                .toList();
+    }
+
+    /**
+     * Liefert die Gruppen, die einem Benutzer zugewiesen sind, sortiert nach Bezeichnung.
+     *
+     * @param benutzername der Benutzername
+     * @return die zugewiesenen Gruppen
+     */
+    public List<Gruppe> findZugewiesene(String benutzername) {
+        return gruppeRepository.findZugewieseneGruppen(benutzername).stream()
+                .sorted(NACH_BEZEICHNUNG)
                 .toList();
     }
 

@@ -6,9 +6,9 @@ Ein Spring Boot Web-Anwendung zur Verwaltung von Studentenanwesenheit in Bildung
 
 - **Gruppenverwaltung**: Erstellen und verwalten von Studentengruppen
 - **Studentenverwaltung**: Speichern von Studenteninformationen
-- **Anwesenheitserfassung**: Aufzeichnung von Anwesenheitsstatus mit Kommentaren
+- **Anwesenheitserfassung**: Aufzeichnung von Anwesenheitsstatus mit Kommentaren, auch nachträglich für vergangene Tage
 - **Statistiken**: Anzeige von Anwesenheitsstatistiken und Berichten
-- **Sicherheit**: Authentifizierung und rollenbasierte Autorisierung
+- **Sicherheit**: Authentifizierung und rollenbasierte Autorisierung; Lehrer sehen nur die ihnen zugewiesenen Gruppen
 
 ## Technologie-Stack
 
@@ -115,11 +115,16 @@ export ADMIN_PASSWORD=ein-sicheres-passwort   # mindestens 8 Zeichen
 Existiert beim Start noch kein Administrator, wird dieser Benutzer angelegt (ein vorhandener Benutzer mit diesem Namen wird zum Administrator gemacht und erhält das Passwort). Sobald ein Administrator existiert, werden die Variablen ignoriert.
 
 ### Weitere Benutzer
-Administratoren verwalten Benutzer über **Benutzer** im Menü (`/admin/benutzer`): anlegen, Passwort neu setzen und löschen. Das eigene Konto kann nicht gelöscht werden.
+Administratoren verwalten Benutzer über **Benutzer** im Menü (`/admin/benutzer`): anlegen, Gruppen zuweisen, Passwort neu setzen und löschen. Das eigene Konto kann nicht gelöscht werden.
 
 ### Rollen
-- **Administrator**: Benutzerverwaltung, Anwesenheitserfassung und Statistiken
-- **Lehrer**: Anwesenheitserfassung und Statistiken
+- **Administrator**: Benutzer-, Gruppen- und Studentenverwaltung, Anwesenheitserfassung und Statistiken für alle Gruppen
+- **Lehrer**: Anwesenheitserfassung, Monatsübersicht und Statistiken nur für die zugewiesenen Gruppen
+
+### Gruppen zuweisen
+Lehrer sehen in der Gruppenübersicht nur die Gruppen, die ihnen zugewiesen sind. Andere Gruppen, deren Monatsübersicht und die Statistiken ihrer Studenten sind für sie gesperrt (Fehlerseite „Zugriff verweigert“). Die Gruppen werden beim Anlegen eines Lehrers ausgewählt oder später über **Gruppen zuweisen** in der Benutzerliste geändert. Administratoren sehen immer alle Gruppen.
+
+Eine neu angelegte Gruppe ist zunächst keinem Lehrer zugewiesen. Beim Update auf V7 erhalten alle bestehenden Lehrer alle vorhandenen Gruppen, damit sich für sie nichts ändert; danach können die Zuweisungen eingeschränkt werden.
 
 ### Bestehende Benutzer aus früheren Versionen
 Frühere Versionen haben Passwörter im Klartext gespeichert. Beim Start werden solche Passwörter automatisch gehasht, Benutzer ohne Rolle werden Lehrer. Die Anmeldedaten bleiben gleich.
@@ -129,7 +134,12 @@ Die Spalte `rolle` und ausreichend Platz für die Passwort-Hashes werden beim St
 ## Anwesenheitserfassung
 
 ### Ankunfts- und Verlassen-Zeit
-Ankunfts- und Verlassen-Zeit werden pro Erfassung in eigenen Spalten gespeichert (`ankunftszeit`, `verlassen_um`). Wird das Formular am selben Tag erneut geöffnet, sind die bereits gespeicherten Werte vorausgefüllt. Beim Speichern wird geprüft, dass alle Studenten zur Gruppe gehören und die Verlassen-Zeit nicht vor der Ankunftszeit liegt; ist ein Eintrag ungültig, wird nichts gespeichert.
+Ankunfts- und Verlassen-Zeit werden pro Erfassung in eigenen Spalten gespeichert (`ankunftszeit`, `verlassen_um`). Wird ein Tag erneut geöffnet, sind die bereits gespeicherten Werte vorausgefüllt. Beim Speichern wird geprüft, dass alle Studenten zur Gruppe gehören und die Verlassen-Zeit nicht vor der Ankunftszeit liegt; ist ein Eintrag ungültig, wird nichts gespeichert.
+
+### Vergangene Tage nachtragen und korrigieren
+Das Formular öffnet standardmäßig den heutigen Tag. Über die Tagesauswahl oben rechts (Pfeile oder Datumsfeld) lässt sich jeder vergangene Tag öffnen, ebenso per Klick auf einen Tag oder eine Zelle in der Monatsübersicht. Bereits gespeicherte Werte werden dort vorausgefüllt und beim Speichern ersetzt. Zukünftige Tage können nicht erfasst werden.
+
+Im Formular eines vergangenen Tages erscheinen alle Studenten, die an diesem Tag aktiv waren, also auch Studenten, die erst später deaktiviert wurden.
 
 ### Verspätungen
 Eine Ankunft nach dem Unterrichtsbeginn zählt als Verspätung. Der Unterrichtsbeginn ist standardmäßig 08:00 und kann über eine Umgebungsvariable geändert werden:
@@ -154,10 +164,11 @@ Das Datenbankschema wird mit Flyway verwaltet. Die Migrationen liegen in `src/ma
 | V4 | Status-Werte „Anwesend“, „Entschuldigt“, „Unentschuldigt“ und „Krankmeldung“ |
 | V5 | Spalte `studenten.deaktiviert_am` (leer bedeutet aktiv) |
 | V6 | Höchstens eine Erfassung pro Student und Tag (Unique-Constraint `uk_erfassung_student_datum`) |
+| V7 | Tabelle `benutzer_gruppe` (Gruppen je Lehrer); bestehende Lehrer erhalten alle vorhandenen Gruppen |
 
-**Bestehende Datenbanken**: Beim ersten Start mit Flyway wird eine bereits vorhandene Datenbank als Version 1 markiert, danach laufen V2 bis V6. Die Migrationen V2 bis V5 prüfen selbst, ob Spalten und Status-Werte schon vorhanden sind. Sie funktionieren daher für ältere Datenbanken ebenso wie für Datenbanken, in denen frühere Versionen die Spalten bereits angelegt haben. Legen Sie vor dem ersten Start trotzdem eine Sicherung an.
+**Bestehende Datenbanken**: Beim ersten Start mit Flyway wird eine bereits vorhandene Datenbank als Version 1 markiert, danach laufen V2 bis V7. Die Migrationen V2 bis V5 prüfen selbst, ob Spalten und Status-Werte schon vorhanden sind. Sie funktionieren daher für ältere Datenbanken ebenso wie für Datenbanken, in denen frühere Versionen die Spalten bereits angelegt haben. Legen Sie vor dem ersten Start trotzdem eine Sicherung an.
 
-**Schema ändern**: Änderungen immer als neue Migration anlegen (z. B. `V7__beschreibung.sql`). Bereits ausgeführte Migrationen dürfen nicht nachträglich geändert werden.
+**Schema ändern**: Änderungen immer als neue Migration anlegen (z. B. `V8__beschreibung.sql`). Bereits ausgeführte Migrationen dürfen nicht nachträglich geändert werden.
 
 ### Doppelte Erfassungen (V6)
 
@@ -261,15 +272,19 @@ SPRING_PROFILES_ACTIVE=prod
 
 ### Geschützte Endpunkte
 - `GET /willkommen` - Willkommensseite
-- `GET /gruppen` - Gruppenübersicht
-- `GET /anwesenheit/{gruppeId}` - Anwesenheitserfassung
-- `POST /anwesenheit/{gruppeId}/speichern` - Anwesenheit speichern
+- `GET /gruppen` - Gruppenübersicht (Lehrer: nur zugewiesene Gruppen)
+- `GET /anwesenheit/{gruppeId}?datum=JJJJ-MM-TT` - Anwesenheitserfassung (ohne `datum` für heute)
+- `POST /anwesenheit/{gruppeId}/speichern` - Anwesenheit für den Tag aus dem Feld `datum` speichern
 - `GET /liste/{gruppeId}` - Monatliche Anwesenheitsliste einer Gruppe
 - `GET /studenten/{studentId}` - Statistik eines Studenten
+
+Lehrer erhalten für Gruppen, die ihnen nicht zugewiesen sind, und deren Studenten den Status 403.
 
 ### Nur für Administratoren
 - `GET /admin/benutzer` - Benutzerverwaltung
 - `POST /admin/benutzer` - Benutzer anlegen
+- `GET /admin/benutzer/{id}/gruppen` - Gruppen eines Lehrers anzeigen
+- `POST /admin/benutzer/{id}/gruppen` - Gruppen eines Lehrers festlegen
 - `POST /admin/benutzer/{id}/passwort` - Passwort neu setzen
 - `POST /admin/benutzer/{id}/loeschen` - Benutzer löschen
 - `GET /admin/gruppen` - Gruppenverwaltung

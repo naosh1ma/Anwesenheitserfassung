@@ -16,22 +16,44 @@
             </nav>
             <h1 class="page-head__title">Anwesenheit erfassen</h1>
             <div class="meta">
-                <span th:text="${#temporals.format(#temporals.createToday(), 'EEEE, d. MMMM yyyy')}">Datum</span>
+                <span th:text="${#temporals.format(datum, 'EEEE, d. MMMM yyyy')}">Datum</span>
+                <span th:unless="${istHeute}" class="badge badge--accent">Nachtrag</span>
                 <span class="meta__item">
                     <svg th:replace="~{fragments/icons :: clock}"></svg>
                     <span th:text="|Unterrichtsbeginn ${unterrichtsbeginn}|">Unterrichtsbeginn</span>
                 </span>
             </div>
         </div>
-        <a th:href="@{/liste/{id}(id=${gruppe.id})}" class="btn btn--secondary">
-            <svg th:replace="~{fragments/icons :: calendar}"></svg>
-            <span>Monatsübersicht</span>
-        </a>
+        <div class="page-head__actions">
+            <!-- Tag wählen: vergangene Tage können nachgetragen werden, zukünftige nicht -->
+            <form th:action="@{/anwesenheit/{id}(id=${gruppe.id})}" method="get" class="month-switch" id="tag-form">
+                <a th:href="@{/anwesenheit/{id}(id=${gruppe.id},datum=${vorherigerTag})}" class="month-switch__step" aria-label="Vorheriger Tag">
+                    <svg th:replace="~{fragments/icons :: chevron-left}"></svg>
+                </a>
+                <input type="date" name="datum" class="month-switch__input" required aria-label="Tag"
+                       th:value="${datum}" th:max="${heute}">
+                <a th:if="${naechsterTag != null}" th:href="@{/anwesenheit/{id}(id=${gruppe.id},datum=${naechsterTag})}"
+                   class="month-switch__step" aria-label="Nächster Tag">
+                    <svg th:replace="~{fragments/icons :: chevron-right}"></svg>
+                </a>
+                <span th:if="${naechsterTag == null}" class="month-switch__step is-disabled" aria-hidden="true">
+                    <svg th:replace="~{fragments/icons :: chevron-right}"></svg>
+                </span>
+                <noscript><button type="submit" class="btn btn--secondary">Anzeigen</button></noscript>
+            </form>
+            <a th:unless="${istHeute}" th:href="@{/anwesenheit/{id}(id=${gruppe.id})}" class="btn btn--secondary">Heute</a>
+            <a th:href="@{/liste/{id}(id=${gruppe.id},monat=${#temporals.format(datum, 'yyyy-MM')})}" class="btn btn--secondary">
+                <svg th:replace="~{fragments/icons :: calendar}"></svg>
+                <span>Monatsübersicht</span>
+            </a>
+        </div>
     </div>
 
     <!-- Formularbindung an anwesenheitForm -->
     <form th:action="@{/anwesenheit/{id}/speichern(id=${gruppe.id})}" th:object="${anwesenheitForm}" method="post"
           class="card" id="erfassung-form" th:attr="data-unterrichtsbeginn=${unterrichtsbeginn}">
+        <!-- Der Tag, für den gespeichert wird -->
+        <input type="hidden" name="datum" th:value="${datum}"/>
         <div class="card__head">
             <span class="card__title"
                   th:with="anzahl=${#lists.size(anwesenheitForm.eintraege)}"
@@ -43,7 +65,7 @@
         </div>
 
         <div class="empty" th:if="${#lists.isEmpty(anwesenheitForm.eintraege)}">
-            <p class="muted">Diese Gruppe hat keine aktiven Studenten.</p>
+            <p class="muted">Diese Gruppe hatte an diesem Tag keine aktiven Studenten.</p>
         </div>
 
         <th:block th:unless="${#lists.isEmpty(anwesenheitForm.eintraege)}">
@@ -110,9 +132,28 @@
     </form>
 </div>
 
-<!-- Zählt anwesende und abwesende Studenten und zeigt Verspätungen direkt beim Eintippen an -->
+<!-- Tageswechsel; zählt anwesende und abwesende Studenten und zeigt Verspätungen direkt beim Eintippen an -->
 <th:block layout:fragment="scripts">
     <script>
+        // Nach der Auswahl eines Tages die Seite für diesen Tag öffnen. Die kurze Verzögerung verhindert,
+        // dass beim Eintippen des Datums schon nach der ersten Ziffer gewechselt wird.
+        (function () {
+            var tagForm = document.getElementById('tag-form');
+            if (!tagForm) {
+                return;
+            }
+            var eingabe = tagForm.querySelector('input[name="datum"]');
+            var timer = null;
+            eingabe.addEventListener('change', function () {
+                clearTimeout(timer);
+                timer = setTimeout(function () {
+                    if (eingabe.value && eingabe.checkValidity()) {
+                        tagForm.submit();
+                    }
+                }, 700);
+            });
+        })();
+
         (function () {
             var form = document.getElementById('erfassung-form');
             if (!form) {

@@ -1,9 +1,12 @@
 package com.art.erfassung.tests;
 
+import com.art.erfassung.model.Benutzer;
 import com.art.erfassung.model.Erfassung;
 import com.art.erfassung.model.Gruppe;
+import com.art.erfassung.model.Rolle;
 import com.art.erfassung.model.Status;
 import com.art.erfassung.model.Studenten;
+import com.art.erfassung.repository.BenutzerRepository;
 import com.art.erfassung.repository.ErfassungRepository;
 import com.art.erfassung.repository.GruppeRepository;
 import com.art.erfassung.repository.StatusRepository;
@@ -52,6 +55,9 @@ public class GruppenVerwaltungIntegrationTest {
     @Autowired
     private StatusRepository statusRepository;
 
+    @Autowired
+    private BenutzerRepository benutzerRepository;
+
     private Gruppe gruppe;
     private Studenten student;
 
@@ -59,10 +65,15 @@ public class GruppenVerwaltungIntegrationTest {
     public void setup() {
         gruppe = gruppeRepository.save(new Gruppe("Informatik 1A"));
         student = studentenRepository.save(new Studenten("Mustermann", "Max", gruppe));
+        // The user "teacher" of the requests exists in the database and is assigned to the group
+        Benutzer lehrer = new Benutzer("teacher", "Tina", "Teacher", Rolle.TEACHER);
+        lehrer.getGruppen().add(gruppe);
+        benutzerRepository.save(lehrer);
     }
 
     @AfterEach
     public void cleanup() {
+        benutzerRepository.findByBenutzername("teacher").ifPresent(benutzerRepository::delete);
         erfassungRepository.deleteAll();
         studentenRepository.deleteAll();
         gruppeRepository.deleteAll();

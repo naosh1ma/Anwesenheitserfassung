@@ -2,8 +2,10 @@ package com.art.erfassung.controller;
 
 import com.art.erfassung.dto.BenutzerForm;
 import com.art.erfassung.model.Benutzer;
+import com.art.erfassung.model.Gruppe;
 import com.art.erfassung.model.Rolle;
 import com.art.erfassung.service.BenutzerService;
+import com.art.erfassung.service.GruppeService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -14,12 +16,13 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Controller für die Benutzerverwaltung.
  * <p>
  * Nur Administratoren haben Zugriff (siehe SecurityConfig). Sie können Benutzer anlegen,
- * Passwörter neu setzen und Benutzer löschen.
+ * Lehrern Gruppen zuweisen, Passwörter neu setzen und Benutzer löschen.
  * </p>
  */
 @Controller
@@ -28,9 +31,12 @@ public class BenutzerController {
 
     // Service zur Verwaltung der Benutzer
     private final BenutzerService benutzerService;
+    // Service zum Laden der Gruppen, die Lehrern zugewiesen werden können
+    private final GruppeService gruppeService;
 
-    public BenutzerController(BenutzerService benutzerService) {
+    public BenutzerController(BenutzerService benutzerService, GruppeService gruppeService) {
         this.benutzerService = benutzerService;
+        this.gruppeService = gruppeService;
     }
 
     /**
@@ -70,13 +76,53 @@ public class BenutzerController {
         }
         try {
             Benutzer benutzer = benutzerService.anlegen(form.getBenutzername(), form.getVorname(), form.getName(),
-                    form.getRolle(), form.getPasswort());
+                    form.getRolle(), form.getPasswort(), form.getGruppenIds());
+            String hinweis = !benutzer.isAdmin() && benutzer.getGruppen().isEmpty()
+                    ? " Weisen Sie noch Gruppen zu, damit der Lehrer Anwesenheit erfassen kann." : "";
             redirectAttributes.addFlashAttribute("successMessage",
-                    "Benutzer '" + benutzer.getBenutzername() + "' wurde angelegt.");
+                    "Benutzer '" + benutzer.getBenutzername() + "' wurde angelegt." + hinweis);
             return "redirect:/admin/benutzer";
         } catch (IllegalArgumentException e) {
             model.addAttribute("errorMessage", e.getMessage());
             return zeigeSeite(model);
+        }
+    }
+
+    /**
+     * Zeigt an, welche Gruppen einem Benutzer zugewiesen sind, und erlaubt die Änderung.
+     *
+     * @param id    die ID des Benutzers
+     * @param model das Model für die View
+     * @return den Namen der View "admin-benutzer-gruppen"
+     */
+    @GetMapping("/{id}/gruppen")
+    public String gruppenBearbeiten(@PathVariable Integer id, Model model) {
+        Benutzer benutzer = benutzerService.findMitGruppen(id);
+        model.addAttribute("benutzer", benutzer);
+        model.addAttribute("alleGruppen", gruppeService.findAll());
+        model.addAttribute("zugewieseneIds", benutzer.getGruppen().stream().map(Gruppe::getId).collect(Collectors.toSet()));
+        return "admin-benutzer-gruppen";
+    }
+
+    /**
+     * Speichert die Gruppen, die ein Lehrer sehen darf. Bisherige Zuweisungen werden ersetzt.
+     *
+     * @param id                 die ID des Benutzers
+     * @param gruppenIds         die ausgewählten Gruppen; ohne Auswahl werden alle Zuweisungen entfernt
+     * @param redirectAttributes Attribute für die Meldung nach dem Redirect
+     * @return Redirect auf die Benutzerliste oder bei Fehlern zurück auf die Zuweisung
+     */
+    @PostMapping("/{id}/gruppen")
+    public String gruppenSpeichern(@PathVariable Integer id, @RequestParam(required = false) List<Integer> gruppenIds,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            Benutzer benutzer = benutzerService.gruppenZuweisen(id, gruppenIds == null ? List.of() : gruppenIds);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Die Gruppen von '" + benutzer.getBenutzername() + "' wurden gespeichert.");
+            return "redirect:/admin/benutzer";
+        } catch (IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/benutzer/" + id + "/gruppen";
         }
     }
 
@@ -123,6 +169,7 @@ public class BenutzerController {
     private String zeigeSeite(Model model) {
         model.addAttribute("benutzerListe", benutzerService.findAll());
         model.addAttribute("rollen", Rolle.values());
+        model.addAttribute("alleGruppen", gruppeService.findAll());
         return "benutzer";
     }
 }

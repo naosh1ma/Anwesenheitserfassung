@@ -1,8 +1,10 @@
 package com.art.erfassung.tests;
 
 import com.art.erfassung.model.Benutzer;
+import com.art.erfassung.model.Gruppe;
 import com.art.erfassung.model.Rolle;
 import com.art.erfassung.repository.BenutzerRepository;
+import com.art.erfassung.repository.GruppeRepository;
 import com.art.erfassung.service.BenutzerService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,6 +32,9 @@ public class BenutzerServiceTest {
     @Mock
     private BenutzerRepository benutzerRepository;
 
+    @Mock
+    private GruppeRepository gruppeRepository;
+
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     private BenutzerService benutzerService;
@@ -36,7 +42,33 @@ public class BenutzerServiceTest {
     @BeforeEach
     public void setup() {
         MockitoAnnotations.openMocks(this);
-        benutzerService = new BenutzerService(benutzerRepository, passwordEncoder);
+        benutzerService = new BenutzerService(benutzerRepository, passwordEncoder, gruppeRepository);
+    }
+
+    @Test
+    public void testGruppenZuweisen_ReplacesGroups() {
+        // Arrange
+        Benutzer lehrer = new Benutzer("lehrer", "Lena", "Lehrer", Rolle.TEACHER);
+        lehrer.getGruppen().add(new Gruppe("Alt"));
+        Gruppe neu = new Gruppe("Neu");
+        when(benutzerRepository.findById(1)).thenReturn(Optional.of(lehrer));
+        when(gruppeRepository.findAllById(List.of(2))).thenReturn(List.of(neu));
+        when(benutzerRepository.save(lehrer)).thenReturn(lehrer);
+
+        // Act
+        benutzerService.gruppenZuweisen(1, List.of(2));
+
+        // Assert
+        assertEquals(Set.of(neu), lehrer.getGruppen());
+        verify(benutzerRepository).save(lehrer);
+    }
+
+    @Test
+    public void testGruppenZuweisen_Admin_Throws() {
+        when(benutzerRepository.findById(1)).thenReturn(Optional.of(new Benutzer("chef", "Carla", "Chef", Rolle.ADMIN)));
+
+        assertThrows(IllegalArgumentException.class, () -> benutzerService.gruppenZuweisen(1, List.of(2)));
+        verify(benutzerRepository, never()).save(any());
     }
 
     @Test

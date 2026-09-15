@@ -33,6 +33,8 @@ public class ErfassungService {
 
     // Uhrzeiten aus dem Formular, z. B. "08:30" (auch "8:30" wird akzeptiert)
     private static final DateTimeFormatter ZEIT_FORMAT = DateTimeFormatter.ofPattern("H:mm");
+    // Datumsformat in Fehlermeldungen
+    private static final DateTimeFormatter DATUM_FORMAT = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     // Repository zur Verwaltung der Erfassungen
     private final ErfassungRepository erfassungRepository;
@@ -49,28 +51,36 @@ public class ErfassungService {
     }
 
     /**
-     * Speichert die Anwesenheit einer Gruppe für den heutigen Tag.
+     * Speichert die Anwesenheit einer Gruppe für einen Tag, heute oder nachträglich für einen vergangenen Tag.
      * <p>
      * Diese Methode führt folgende Aufgaben aus:
      * <ul>
-     *   <li>Lädt die Studenten der Gruppe, alle Status und die heutigen Erfassungen der Gruppe mit je einer Abfrage.</li>
-     *   <li>Prüft alle Einträge: Jeder Student muss zur Gruppe gehören und aktiv sein, der Status muss existieren und
-     *       die Verlassen-Zeit darf nicht vor der Ankunftszeit liegen. Ist ein Eintrag ungültig, wird nichts geändert.</li>
-     *   <li>Aktualisiert eine bestehende Erfassung des Studenten für heute oder legt eine neue an.
+     *   <li>Lädt die Studenten der Gruppe, alle Status und die Erfassungen der Gruppe für diesen Tag mit je einer Abfrage.</li>
+     *   <li>Prüft alle Einträge: Der Tag darf nicht in der Zukunft liegen, jeder Student muss zur Gruppe gehören und
+     *       an diesem Tag aktiv gewesen sein, der Status muss existieren und die Verlassen-Zeit darf nicht vor der
+     *       Ankunftszeit liegen. Ist ein Eintrag ungültig, wird nichts geändert.</li>
+     *   <li>Aktualisiert eine bestehende Erfassung des Studenten für diesen Tag oder legt eine neue an.
      *       Ankunfts- und Verlassen-Zeit werden in eigenen Spalten gespeichert, leere Werte als {@code null}.</li>
      *   <li>Speichert alle Erfassungen in einer Transaktion.</li>
      * </ul>
      * </p>
      *
      * @param gruppeId die ID der Gruppe, für die die Anwesenheit erfasst wird
+     * @param datum    der Tag, für den die Anwesenheit erfasst wird
      * @param dtos     die vom Benutzer eingegebenen Anwesenheitsdaten
-     * @throws IllegalArgumentException wenn ein Student nicht zur Gruppe gehört oder deaktiviert ist, ein Status
-     *                                  unbekannt ist oder die Verlassen-Zeit vor der Ankunftszeit liegt
+     * @throws IllegalArgumentException wenn der Tag fehlt oder in der Zukunft liegt, ein Student nicht zur Gruppe
+     *                                  gehört oder an diesem Tag schon deaktiviert war, ein Status unbekannt ist
+     *                                  oder die Verlassen-Zeit vor der Ankunftszeit liegt
      * @throws java.time.format.DateTimeParseException wenn eine Uhrzeit nicht im Format HH:MM vorliegt
      */
     @Transactional
-    public void erfassenAnwesenheiten(Integer gruppeId, List<ErfassungDTO> dtos) {
-        LocalDate heute = LocalDate.now();
+    public void erfassenAnwesenheiten(Integer gruppeId, LocalDate datum, List<ErfassungDTO> dtos) {
+        if (datum == null) {
+            throw new IllegalArgumentException("Bitte wählen Sie einen Tag aus.");
+        }
+        if (datum.isAfter(LocalDate.now())) {
+            throw new IllegalArgumentException("Für zukünftige Tage kann noch keine Anwesenheit erfasst werden.");
+        }
         Map<Integer, Studenten> studentenDerGruppe = studentenRepository.findByGruppeId(gruppeId).stream()
                 .collect(Collectors.toMap(Studenten::getId, Function.identity()));
         Map<Integer, Status> statusNachId = statusRepository.findAll().stream()
@@ -84,9 +94,10 @@ public class ErfassungService {
                 throw new IllegalArgumentException(
                         "Der Student mit der ID " + dto.getStudentenId() + " gehört nicht zu dieser Gruppe.");
             }
-            if (!student.isAktiv()) {
+            if (student.getDeaktiviertAm() != null && !datum.isBefore(student.getDeaktiviertAm())) {
                 throw new IllegalArgumentException(student.getVorname() + " " + student.getName()
-                        + " ist deaktiviert. Für deaktivierte Studenten kann keine Anwesenheit erfasst werden.");
+                        + " ist deaktiviert (seit " + student.getDeaktiviertAm().format(DATUM_FORMAT)
+                        + "). Für diesen Tag kann keine Anwesenheit erfasst werden.");
             }
             Status status = statusNachId.get(dto.getStatusId());
             if (status == null) {
@@ -103,14 +114,14 @@ public class ErfassungService {
             eintraege.add(new GeprueftEintrag(student, status, ankunftszeit, verlassenUm, kommentar));
         }
 
-        // Bestehende Erfassungen von heute aktualisieren, fehlende neu anlegen
-        Map<Integer, Erfassung> heutigeErfassungen = findByGruppeUndMonat(gruppeId, heute, heute).stream()
+        // Bestehende Erfassungen des Tages aktualisieren, fehlende neu anlegen
+        Map<Integer, Erfassung> erfassungenDesTages = findByGruppeUndMonat(gruppeId, datum, datum).stream()
                 .collect(Collectors.toMap(e -> e.getStudenten().getId(), Function.identity(), (erste, zweite) -> erste));
         List<Erfassung> erfassungenToSave = new ArrayList<>();
         for (GeprueftEintrag eintrag : eintraege) {
-            Erfassung erfassung = heutigeErfassungen.get(eintrag.student().getId());
+            Erfassung erfassung = erfassungenDesTages.get(eintrag.student().getId());
             if (erfassung == null) {
-                erfassung = new Erfassung(eintrag.student(), heute, eintrag.status(), eintrag.kommentar());
+                erfassung = new Erfassung(eintrag.student(), datum, eintrag.status(), eintrag.kommentar());
             }
             erfassung.setStatus(eintrag.status());
             erfassung.setKommentar(eintrag.kommentar());

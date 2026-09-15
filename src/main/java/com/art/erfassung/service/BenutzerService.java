@@ -3,6 +3,7 @@ package com.art.erfassung.service;
 import com.art.erfassung.model.Benutzer;
 import com.art.erfassung.model.Rolle;
 import com.art.erfassung.repository.BenutzerRepository;
+import com.art.erfassung.repository.GruppeRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -41,10 +43,14 @@ public class BenutzerService implements UserDetailsService {
     private final BenutzerRepository benutzerRepository;
     // Encoder zum Hashen und Prüfen von Passwörtern
     private final PasswordEncoder passwordEncoder;
+    // Repository zum Laden der Gruppen, die einem Lehrer zugewiesen werden
+    private final GruppeRepository gruppeRepository;
 
-    public BenutzerService(BenutzerRepository benutzerRepository, PasswordEncoder passwordEncoder) {
+    public BenutzerService(BenutzerRepository benutzerRepository, PasswordEncoder passwordEncoder,
+                           GruppeRepository gruppeRepository) {
         this.benutzerRepository = benutzerRepository;
         this.passwordEncoder = passwordEncoder;
+        this.gruppeRepository = gruppeRepository;
     }
 
     /**
@@ -72,12 +78,33 @@ public class BenutzerService implements UserDetailsService {
     }
 
     /**
-     * Gibt alle Benutzer sortiert nach Benutzername zurück.
+     * Gibt alle Benutzer mitsamt ihren zugewiesenen Gruppen sortiert nach Benutzername zurück.
      *
      * @return eine Liste aller {@link Benutzer}
      */
     public List<Benutzer> findAll() {
-        return benutzerRepository.findAll(Sort.by("benutzername"));
+        return benutzerRepository.findAllBy(Sort.by("benutzername"));
+    }
+
+    /**
+     * Sucht einen Benutzer mitsamt seinen zugewiesenen Gruppen.
+     *
+     * @param id die ID des Benutzers
+     * @return der Benutzer
+     * @throws java.util.NoSuchElementException wenn kein Benutzer mit dieser ID existiert
+     */
+    public Benutzer findMitGruppen(Integer id) {
+        return benutzerRepository.findMitGruppenById(id).orElseThrow();
+    }
+
+    /**
+     * Legt einen neuen Benutzer mit gehashtem Passwort und ohne zugewiesene Gruppen an.
+     *
+     * @see #anlegen(String, String, String, Rolle, String, Collection)
+     */
+    @Transactional
+    public Benutzer anlegen(String benutzername, String vorname, String name, Rolle rolle, String passwort) {
+        return anlegen(benutzername, vorname, name, rolle, passwort, List.of());
     }
 
     /**
@@ -88,11 +115,13 @@ public class BenutzerService implements UserDetailsService {
      * @param name         der Nachname
      * @param rolle        die Rolle des Benutzers
      * @param passwort     das Passwort im Klartext (mindestens {@value #MIN_PASSWORT_LAENGE} Zeichen)
+     * @param gruppenIds   die Gruppen, die ein Lehrer sehen darf (bei Administratoren ohne Bedeutung)
      * @return der gespeicherte {@link Benutzer}
      * @throws IllegalArgumentException wenn der Benutzername vergeben oder das Passwort zu kurz ist
      */
     @Transactional
-    public Benutzer anlegen(String benutzername, String vorname, String name, Rolle rolle, String passwort) {
+    public Benutzer anlegen(String benutzername, String vorname, String name, Rolle rolle, String passwort,
+                            Collection<Integer> gruppenIds) {
         String login = benutzername.trim();
         if (benutzerRepository.findByBenutzername(login).isPresent()) {
             throw new IllegalArgumentException("Der Benutzername '" + login + "' ist bereits vergeben.");
@@ -100,6 +129,31 @@ public class BenutzerService implements UserDetailsService {
         pruefePasswort(passwort);
         Benutzer benutzer = new Benutzer(login, vorname.trim(), name.trim(), rolle);
         benutzer.setPasswort(passwordEncoder.encode(passwort));
+        if (!benutzer.isAdmin() && gruppenIds != null && !gruppenIds.isEmpty()) {
+            benutzer.getGruppen().addAll(gruppeRepository.findAllById(gruppenIds));
+        }
+        return benutzerRepository.save(benutzer);
+    }
+
+    /**
+     * Legt fest, welche Gruppen ein Lehrer sehen darf. Bisherige Zuweisungen werden ersetzt.
+     *
+     * @param id         die ID des Benutzers
+     * @param gruppenIds die IDs der zugewiesenen Gruppen; leer entfernt alle Zuweisungen
+     * @return der gespeicherte Benutzer
+     * @throws IllegalArgumentException wenn der Benutzer Administrator ist (Administratoren sehen immer alle Gruppen)
+     * @throws java.util.NoSuchElementException wenn kein Benutzer mit dieser ID existiert
+     */
+    @Transactional
+    public Benutzer gruppenZuweisen(Integer id, Collection<Integer> gruppenIds) {
+        Benutzer benutzer = benutzerRepository.findById(id).orElseThrow();
+        if (benutzer.isAdmin()) {
+            throw new IllegalArgumentException("Administratoren sehen immer alle Gruppen, eine Zuweisung ist nicht nötig.");
+        }
+        benutzer.getGruppen().clear();
+        if (gruppenIds != null && !gruppenIds.isEmpty()) {
+            benutzer.getGruppen().addAll(gruppeRepository.findAllById(gruppenIds));
+        }
         return benutzerRepository.save(benutzer);
     }
 

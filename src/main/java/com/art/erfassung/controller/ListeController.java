@@ -6,6 +6,8 @@ import com.art.erfassung.model.Studenten;
 import com.art.erfassung.service.ErfassungService;
 import com.art.erfassung.service.GruppeService;
 import com.art.erfassung.service.StudentenService;
+import com.art.erfassung.service.ZugriffService;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -35,11 +37,15 @@ public class ListeController {
     // Service zur Verwaltung der Anwesenheitsdaten (Erfassungen)
     private final ErfassungService erfassungService;
 
+    // Service zur Prüfung, ob der Benutzer die Gruppe sehen darf
+    private final ZugriffService zugriffService;
+
     public ListeController(GruppeService gruppeService, StudentenService studentenService,
-                           ErfassungService erfassungService) {
+                           ErfassungService erfassungService, ZugriffService zugriffService) {
         this.gruppeService = gruppeService;
         this.studentenService = studentenService;
         this.erfassungService = erfassungService;
+        this.zugriffService = zugriffService;
     }
 
     /**
@@ -52,15 +58,18 @@ public class ListeController {
      * </p>
      *
      * @param gruppenId die ID der anzuzeigenden Gruppe
-     * @param monat     (optional) der Monat im Format "YYYY-MM"; falls leer wird der aktuelle Monat verwendet
-     * @param model     das Model, in dem die Daten für die View gespeichert werden
+     * @param monat          (optional) der Monat im Format "YYYY-MM"; falls leer wird der aktuelle Monat verwendet
+     * @param authentication der angemeldete Benutzer
+     * @param model          das Model, in dem die Daten für die View gespeichert werden
      * @return der Name der View "anwesenheitsliste"
      */
     @GetMapping("/{gruppenId}")
     public String anwesenheitAnzeigen(@PathVariable Integer gruppenId,
                                       @RequestParam(required = false) String monat,
-                                      Model model) {
+                                      Authentication authentication, Model model) {
 
+        // Lehrer sehen nur die ihnen zugewiesenen Gruppen
+        zugriffService.pruefeGruppe(gruppenId, authentication);
         // Laden der Gruppe; löst eine Exception aus, falls die Gruppe nicht existiert
         Gruppe gruppe = gruppeService.findOrThrow(gruppenId);
         // Ermitteln des Monats: angegebener Monat oder (auch bei leerem Monatsfeld) der aktuelle Monat

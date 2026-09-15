@@ -36,14 +36,15 @@
     </div>
 
     <div class="card empty" th:if="${gruppenListe == null or gruppenListe.empty}">
-        <h2 class="empty__title">Noch keine Gruppen</h2>
         <th:block th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
+            <h2 class="empty__title">Noch keine Gruppen</h2>
             <p class="muted">Legen Sie die erste Gruppe an, um mit der Anwesenheitserfassung zu beginnen.</p>
             <a th:href="@{/admin/gruppen}" class="btn btn--primary">Gruppen verwalten</a>
         </th:block>
-        <p th:unless="${#authorization.expression('hasRole(''ADMIN'')')}" class="muted">
-            Wenden Sie sich an die Administration, damit Gruppen angelegt werden.
-        </p>
+        <th:block th:unless="${#authorization.expression('hasRole(''ADMIN'')')}">
+            <h2 class="empty__title">Keine Gruppen zugewiesen</h2>
+            <p class="muted">Ihnen sind noch keine Gruppen zugewiesen. Wenden Sie sich an die Administration.</p>
+        </th:block>
     </div>
 </div>
 </body>

@@ -16,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -27,6 +28,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
@@ -114,6 +116,11 @@ public class WebFlowIntegrationTest {
     }
 
     @Test
+    public void testMissingResource_ReturnsNotFound() throws Exception {
+        mockMvc.perform(get("/favicon.ico").with(teacher())).andExpect(status().isNotFound());
+    }
+
+    @Test
     public void testAnwesenheitForm_PreselectsAnwesend() throws Exception {
         // Act
         String html = render(get("/anwesenheit/{id}", gruppe.getId()));
@@ -128,7 +135,11 @@ public class WebFlowIntegrationTest {
         // Act
         mockMvc.perform(post("/anwesenheit/{id}/speichern", gruppe.getId()).with(teacher()).with(csrf())
                         .param("eintraege[0].studentenId", String.valueOf(student.getId()))
-                        .param("eintraege[0].statusId", String.valueOf(krankmeldung.getId())))
+                        .param("eintraege[0].statusId", String.valueOf(krankmeldung.getId()))
+                        // Unfilled inputs are submitted as empty strings, like the browser does
+                        .param("eintraege[0].ankunftszeit", "")
+                        .param("eintraege[0].verlassenUm", "")
+                        .param("eintraege[0].kommentar", ""))
                 .andExpect(redirectedUrl("/anwesenheit/" + gruppe.getId()));
 
         // Assert
@@ -149,8 +160,8 @@ public class WebFlowIntegrationTest {
                 .andExpect(view().name("anwesenheit"))
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
 
-        // Assert
-        assertTrue(html.contains("Status-ID ist erforderlich"));
+        // Assert: the message is shown exactly once (layout and page must not both render it)
+        assertEquals(1, html.split("Status-ID ist erforderlich", -1).length - 1);
         assertTrue(html.contains("Max Mustermann"));
         assertEquals(0, erfassungRepository.count());
     }
@@ -189,7 +200,24 @@ public class WebFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("statistik"))
                 .andExpect(model().attribute("statistik", hasProperty("krank", is(1L))))
-                .andExpect(model().attribute("statistik", hasProperty("gesamtAnwesenheit", is(50.0))));
+                .andExpect(model().attribute("statistik", hasProperty("gesamtAnwesenheit", is(50.0))))
+                // German number format, independent of the browser language
+                .andExpect(content().string(containsString("50,0%")));
+    }
+
+    @Test
+    public void testAppPages_UseLayoutWithLogoutAndNoDuplicateHeader() throws Exception {
+        // Arrange
+        erfassungRepository.save(new Erfassung(student, LocalDate.now(), anwesend, null));
+        String[] pages = {"/gruppen", "/anwesenheit/" + gruppe.getId(),
+                "/liste/" + gruppe.getId(), "/studenten/" + student.getId()};
+
+        // Act & Assert
+        for (String page : pages) {
+            String html = render(get(page));
+            assertTrue(html.contains("action=\"/logout\""), page + " has no logout button");
+            assertFalse(html.contains("class=\"page-header\""), page + " renders the layout header in addition to its own");
+        }
     }
 
     @Test
@@ -221,7 +249,7 @@ public class WebFlowIntegrationTest {
         return user("teacher").roles("TEACHER");
     }
 
-    private String render(org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder request) throws Exception {
+    private String render(MockHttpServletRequestBuilder request) throws Exception {
         return mockMvc.perform(request.with(teacher()))
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);

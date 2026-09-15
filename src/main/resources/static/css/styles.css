@@ -406,6 +406,18 @@ table td {
     text-decoration: underline;
 }
 
+/* Detailliste in Fehlermeldungen (z. B. Validierungsfehler) */
+.alert-details {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+    font-weight: normal;
+}
+
+/* Breite Tabellen (z. B. Monatsübersicht) horizontal scrollbar machen */
+.table-scroll {
+    overflow-x: auto;
+}
+
 .user-info {
     display: flex;
     flex-direction: column;

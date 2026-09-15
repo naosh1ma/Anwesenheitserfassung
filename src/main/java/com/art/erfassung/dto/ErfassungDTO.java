@@ -14,11 +14,12 @@ public class ErfassungDTO {
 
     private String studentenName;
 
-    @Pattern(regexp = "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", 
+    // Leer ist erlaubt: nicht ausgefüllte Zeitfelder werden vom Browser als leerer String gesendet
+    @Pattern(regexp = "^(([0-1]?[0-9]|2[0-3]):[0-5][0-9])?$",
              message = "Ankunftszeit muss im Format HH:MM angegeben werden (z.B. 08:30)")
     private String ankunftszeit; // Format "HH:mm"
-    
-    @Pattern(regexp = "^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", 
+
+    @Pattern(regexp = "^(([0-1]?[0-9]|2[0-3]):[0-5][0-9])?$",
              message = "Verlassen-Zeit muss im Format HH:MM angegeben werden (z.B. 16:30)")
     private String verlassenUm;  // Format "HH:mm"
     

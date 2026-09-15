@@ -48,16 +48,11 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Success/Error Messages -->
-        <div th:replace="fragments/messages :: all-messages"></div>
-
-        <!-- Page Content -->
         <div class="container">
-            <div class="page-header">
-                <h1 th:text="${pageTitle}">Seitentitel</h1>
-                <p th:if="${pageDescription}" class="page-description" th:text="${pageDescription}"></p>
-            </div>
+            <!-- Success/Error Messages -->
+            <div th:replace="~{fragments/messages :: all-messages}"></div>
 
+            <!-- Page Content (each page renders its own heading) -->
             <div class="page-content">
                 <th:block layout:fragment="content">
                     <!-- Page content goes here -->

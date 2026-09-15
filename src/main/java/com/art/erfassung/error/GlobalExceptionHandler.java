@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.format.DateTimeParseException;
 import java.util.NoSuchElementException;
@@ -57,6 +58,25 @@ public class GlobalExceptionHandler {
     public String handleNoSuchElementException(NoSuchElementException ex, Model model) {
         logger.warn("Ressource nicht gefunden: {}", ex.getMessage());
         model.addAttribute("errorMessage", "Die angeforderte Ressource wurde nicht gefunden.");
+        model.addAttribute("errorType", "not_found");
+        return "error";
+    }
+
+    /**
+     * Behandelt NoResourceFoundException - unbekannte URL oder fehlende Datei (z. B. favicon.ico).
+     * <p>
+     * Solche Anfragen kommen im normalen Betrieb häufig vor und werden daher nur auf Debug-Level protokolliert.
+     * </p>
+     *
+     * @param ex die ausgelöste NoResourceFoundException
+     * @param model das Model für die View
+     * @return den Namen der Fehlerseite
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String handleNoResourceFoundException(NoResourceFoundException ex, Model model) {
+        logger.debug("Seite oder Datei nicht gefunden: {}", ex.getResourcePath());
+        model.addAttribute("errorMessage", "Die angeforderte Seite wurde nicht gefunden.");
         model.addAttribute("errorType", "not_found");
         return "error";
     }

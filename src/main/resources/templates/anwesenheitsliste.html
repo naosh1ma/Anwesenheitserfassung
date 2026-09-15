@@ -1,59 +1,48 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="EN">
+<html lang="de" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
 <head>
     <title>Anwesenheitsübersicht</title>
-    <link rel="stylesheet" th:href="@{/css/styles.css}">
 </head>
-<nav class="navbar">
-    <div class="navbar-container">
-        <div class="logo">
-            <a href="#" class="navbar-logo">
-                <img th:src="@{/images/logo.png}" alt="logo"/>
-            </a>
-        </div>
-        <ul class="menu">
-            <li><a th:href="@{/willkommen}">Startseite</a></li>
-            <li><a th:href="@{/gruppen}">Gruppen</a></li>
-            <li><a th:href="@{/anwesenheit/{id}(id=${gruppe.id})}">Erfassung</a></li>
-            <li><a th:href="@{/liste/{id}(id=${gruppe.id})}">Kursübersicht</a></li>
-        </ul>
-    </div>
-</nav>
 <body>
-<div class="content container mt-5">
+<div layout:fragment="content">
     <h2>Anwesenheitsübersicht für <span th:text="${gruppe.bezeichnung}"></span></h2>
     <form method="get">
         <label for="monat">Monat auswählen:</label>
         <input type="month" id="monat" name="monat" th:value="${monat}">
         <button type="submit" class="btn btn-primary">Anzeigen</button>
     </form>
-<table class="table table-bordered mt-3">
-    <thead>
-    <tr>
-        <th>Student</th>
-        <th th:each="tag : ${#numbers.sequence(1, tageImMonat)}" th:text="${tag}"></th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="student : ${studenten}">
-        <td><a class="no-underline" th:href="@{/studenten/{id}(id=${student.id})}"
-               th:text="${student.vorname} + ' ' + ${student.name}"></a></td>
-        <td th:each="tag : ${#numbers.sequence(1, tageImMonat)}">
-            <span th:each="erfassung : ${erfassungen}"
-                  th:if="${erfassung.studenten.id == student.id and erfassung.datum?.dayOfMonth == tag}"
-                  class="status-indicator"
-                  th:classappend="
-        ${erfassung.status.bezeichnung == 'Anwesend'} ? ' status-anwesend' :
-        (${erfassung.status.bezeichnung == 'Entschuldigt'} ? ' status-entschuldigt' :
-        (${erfassung.status.bezeichnung == 'Unentschuldigt'} ? ' status-unentschuldigt' :
-        (${erfassung.status.bezeichnung == 'Krankmeldung'} ? ' status-krank' : '')))
-      ">
-</span>
-        </td>
-    </tr>
-    </tbody>
-</table>
-<a th:href="@{/gruppen}" class="btn btn-secondary">Zurück zur Gruppenübersicht</a>
+    <div class="table-scroll">
+        <table class="table table-bordered mt-3">
+            <thead>
+            <tr>
+                <th>Student</th>
+                <th th:each="tag : ${#numbers.sequence(1, tageImMonat)}" th:text="${tag}"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="student : ${studenten}">
+                <td><a class="no-underline" th:href="@{/studenten/{id}(id=${student.id})}"
+                       th:text="${student.vorname} + ' ' + ${student.name}"></a></td>
+                <td th:each="tag : ${#numbers.sequence(1, tageImMonat)}">
+                    <span th:each="erfassung : ${erfassungen}"
+                          th:if="${erfassung.studenten.id == student.id and erfassung.datum?.dayOfMonth == tag}"
+                          class="status-indicator"
+                          th:classappend="
+                ${erfassung.status.bezeichnung == 'Anwesend'} ? ' status-anwesend' :
+                (${erfassung.status.bezeichnung == 'Entschuldigt'} ? ' status-entschuldigt' :
+                (${erfassung.status.bezeichnung == 'Unentschuldigt'} ? ' status-unentschuldigt' :
+                (${erfassung.status.bezeichnung == 'Krankmeldung'} ? ' status-krank' : '')))
+              ">
+                    </span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
     </div>
+    <a th:href="@{/anwesenheit/{id}(id=${gruppe.id})}" class="btn btn-primary">Anwesenheit erfassen</a>
+    <a th:href="@{/gruppen}" class="btn btn-secondary">Zurück zur Gruppenübersicht</a>
+</div>
 </body>
 </html>

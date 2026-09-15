@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>Benutzerverwaltung</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2>Benutzerverwaltung</h2>
+
+    <div class="table-scroll">
+        <table class="table table-bordered">
+            <thead>
+            <tr>
+                <th>Benutzername</th>
+                <th>Name</th>
+                <th>Rolle</th>
+                <th>Neues Passwort</th>
+                <th>Löschen</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="benutzer : ${benutzerListe}">
+                <td th:text="${benutzer.benutzername}">login</td>
+                <td th:text="|${benutzer.vorname ?: ''} ${benutzer.name ?: ''}|">Name</td>
+                <td th:text="${benutzer.rolle?.bezeichnung}">Rolle</td>
+                <td>
+                    <form th:action="@{/admin/benutzer/{id}/passwort(id=${benutzer.id})}" method="post" class="inline-form">
+                        <input type="password" name="passwort" required minlength="8"
+                               placeholder="mind. 8 Zeichen" autocomplete="new-password"
+                               th:attr="aria-label=|Neues Passwort für ${benutzer.benutzername}|">
+                        <button type="submit" class="btn btn-secondary">Setzen</button>
+                    </form>
+                </td>
+                <td>
+                    <!-- Das eigene Konto kann nicht gelöscht werden -->
+                    <form th:unless="${benutzer.benutzername == #authentication.name}"
+                          th:action="@{/admin/benutzer/{id}/loeschen(id=${benutzer.id})}" method="post"
+                          onsubmit="return confirm('Diesen Benutzer wirklich löschen?');">
+                        <button type="submit" class="btn btn-danger">Löschen</button>
+                    </form>
+                    <span th:if="${benutzer.benutzername == #authentication.name}">(Ihr Konto)</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Neuen Benutzer anlegen</h3>
+    <form th:action="@{/admin/benutzer}" th:object="${benutzerForm}" method="post" class="benutzer-form">
+        <div class="form-group">
+            <label for="benutzername">Benutzername</label>
+            <input type="text" th:field="*{benutzername}" required autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="vorname">Vorname</label>
+            <input type="text" th:field="*{vorname}" required>
+        </div>
+        <div class="form-group">
+            <label for="name">Nachname</label>
+            <input type="text" th:field="*{name}" required>
+        </div>
+        <div class="form-group">
+            <label for="rolle">Rolle</label>
+            <select th:field="*{rolle}">
+                <option th:each="r : ${rollen}" th:value="${r}" th:text="${r.bezeichnung}">Rolle</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="passwort">Passwort (mindestens 8 Zeichen)</label>
+            <input type="password" th:field="*{passwort}" required minlength="8" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary">Benutzer anlegen</button>
+    </form>
+</div>
+</body>
+</html>

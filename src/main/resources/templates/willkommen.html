@@ -32,6 +32,11 @@
                 <span class="icon">📚</span>
                 Gruppen verwalten
             </a>
+
+            <a th:if="${isAdmin}" th:href="@{/admin/benutzer}" class="btn btn-secondary">
+                <span class="icon">👥</span>
+                Benutzer verwalten
+            </a>
         </div>
     </main>
 </div>

@@ -4,20 +4,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
  * Security configuration for the Erfassung application.
  * <p>
- * This class configures Spring Security to provide basic authentication
- * and authorization for the application. It defines user roles and
- * access control for different endpoints.
+ * This class configures Spring Security to provide form login and authorization
+ * for the application. Users are loaded from the database by
+ * {@link com.art.erfassung.service.BenutzerService}.
  * </p>
  */
 @Configuration
@@ -37,6 +33,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(authz -> authz
                 // Public endpoints
                 .requestMatchers("/", "/login", "/error", "/css/**", "/images/**", "/js/**").permitAll()
+                // User management: admins only
+                .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Attendance and statistics: teachers and admins
                 .requestMatchers("/gruppen/**", "/anwesenheit/**", "/liste/**", "/studenten/**").hasAnyRole("TEACHER", "ADMIN")
                 // All other requests require authentication
@@ -65,29 +63,5 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    /**
-     * Configures in-memory user details service with default users.
-     * In production, this should be replaced with a database-backed user service.
-     *
-     * @param passwordEncoder the password encoder to use
-     * @return UserDetailsService with configured users
-     */
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails admin = User.builder()
-            .username("admin")
-            .password(passwordEncoder.encode("admin123"))
-            .roles("ADMIN")
-            .build();
-
-        UserDetails teacher = User.builder()
-            .username("teacher")
-            .password(passwordEncoder.encode("teacher123"))
-            .roles("TEACHER")
-            .build();
-
-        return new InMemoryUserDetailsManager(admin, teacher);
     }
 }

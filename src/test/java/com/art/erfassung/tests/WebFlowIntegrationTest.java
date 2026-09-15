@@ -32,7 +32,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.logout;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -95,12 +94,6 @@ public class WebFlowIntegrationTest {
     public void testLoginPage_IsReachableAtLoginAndRoot() throws Exception {
         mockMvc.perform(get("/login")).andExpect(status().isOk()).andExpect(view().name("login"));
         mockMvc.perform(get("/")).andExpect(status().isOk()).andExpect(view().name("login"));
-    }
-
-    @Test
-    public void testFormLogin_TeacherIsRedirectedToGruppen() throws Exception {
-        mockMvc.perform(formLogin().user("teacher").password("teacher123"))
-                .andExpect(redirectedUrl("/gruppen"));
     }
 
     @Test

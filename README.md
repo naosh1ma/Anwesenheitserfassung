@@ -84,17 +84,37 @@ java -jar target/erfassung-0.0.1-SNAPSHOT.jar
 
 Die Anwendung ist dann unter `http://localhost:8080` erreichbar.
 
-## Standard-Zugangsdaten
+## Benutzer und Anmeldung
 
-### Administrator
-- **Benutzername**: admin
-- **Passwort**: admin123
-- **Berechtigungen**: Vollzugriff auf alle Funktionen
+Es gibt keine fest eingebauten Zugangsdaten. Benutzer werden in der Tabelle `benutzer` gespeichert, Passwörter nur als BCrypt-Hash.
 
-### Lehrer
-- **Benutzername**: teacher
-- **Passwort**: teacher123
-- **Berechtigungen**: Anwesenheitserfassung und Statistiken
+### Erster Administrator
+Setzen Sie vor dem ersten Start (Entwicklung und Produktion):
+
+```bash
+export ADMIN_USERNAME=admin
+export ADMIN_PASSWORD=ein-sicheres-passwort   # mindestens 8 Zeichen
+```
+
+Existiert beim Start noch kein Administrator, wird dieser Benutzer angelegt (ein vorhandener Benutzer mit diesem Namen wird zum Administrator gemacht und erhält das Passwort). Sobald ein Administrator existiert, werden die Variablen ignoriert.
+
+### Weitere Benutzer
+Administratoren verwalten Benutzer über **Benutzer** im Menü (`/admin/benutzer`): anlegen, Passwort neu setzen und löschen. Das eigene Konto kann nicht gelöscht werden.
+
+### Rollen
+- **Administrator**: Benutzerverwaltung, Anwesenheitserfassung und Statistiken
+- **Lehrer**: Anwesenheitserfassung und Statistiken
+
+### Bestehende Benutzer aus früheren Versionen
+Frühere Versionen haben Passwörter im Klartext gespeichert. Beim Start werden solche Passwörter automatisch gehasht, Benutzer ohne Rolle werden Lehrer. Die Anmeldedaten bleiben gleich.
+
+Die Spalte `benutzer.passwort` muss mindestens 60 Zeichen aufnehmen können. Im `dev`-Profil wird die neue Spalte `rolle` automatisch angelegt. Im `prod`-Profil (Schema-Validierung) führen Sie vor dem Start aus:
+
+```sql
+ALTER TABLE benutzer ADD COLUMN rolle VARCHAR(20);
+-- nur falls die Spalte kürzer ist:
+ALTER TABLE benutzer MODIFY passwort VARCHAR(255);
+```
 
 ## Projektstruktur
 
@@ -137,7 +157,7 @@ src/
 
 ### Wichtige Sicherheitshinweise
 
-1. **Passwörter ändern**: Ändern Sie die Standard-Passwörter vor der Produktionsnutzung
+1. **Administrator-Passwort**: Verwenden Sie für `ADMIN_PASSWORD` ein starkes Passwort. Nach dem ersten Start wird die Variable nicht mehr benötigt und kann entfernt werden
 2. **Datenbank-Zugangsdaten**: Verwenden Sie starke Passwörter und sichere Verbindungen
 3. **HTTPS**: Aktivieren Sie HTTPS in der Produktionsumgebung
 4. **CSRF-Schutz**: CSRF-Schutz ist aktiviert. POST-Formulare müssen mit `th:action` gerendert werden, damit das Token eingefügt wird (auch das Abmelden erfolgt per POST)
@@ -149,6 +169,10 @@ src/
 DB_URL=jdbc:mariadb://your-db-host:3306/anwesenheit
 DB_USERNAME=your-db-user
 DB_PASSWORD=your-secure-password
+
+# Erster Administrator (nur nötig, solange noch kein Administrator existiert)
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=your-secure-admin-password
 
 # Spring Profil
 SPRING_PROFILES_ACTIVE=prod
@@ -168,6 +192,12 @@ SPRING_PROFILES_ACTIVE=prod
 - `POST /anwesenheit/{gruppeId}/speichern` - Anwesenheit speichern
 - `GET /liste/{gruppeId}` - Monatliche Anwesenheitsliste einer Gruppe
 - `GET /studenten/{studentId}` - Statistik eines Studenten
+
+### Nur für Administratoren
+- `GET /admin/benutzer` - Benutzerverwaltung
+- `POST /admin/benutzer` - Benutzer anlegen
+- `POST /admin/benutzer/{id}/passwort` - Passwort neu setzen
+- `POST /admin/benutzer/{id}/loeschen` - Benutzer löschen
 
 ## Beitragen
 

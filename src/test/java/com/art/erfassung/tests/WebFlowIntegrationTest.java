@@ -22,6 +22,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -179,6 +180,53 @@ public class WebFlowIntegrationTest {
                         .param("eintraege[0].studentenId", String.valueOf(student.getId()))
                         .param("eintraege[0].statusId", String.valueOf(anwesend.getId())))
                 .andExpect(status().isForbidden());
+        assertEquals(0, erfassungRepository.count());
+    }
+
+    @Test
+    public void testSpeichern_StoresTimesAndPrefillsFormOnReopen() throws Exception {
+        // Act: save with arrival and leave time
+        mockMvc.perform(post("/anwesenheit/{id}/speichern", gruppe.getId()).with(teacher()).with(csrf())
+                        .param("eintraege[0].studentenId", String.valueOf(student.getId()))
+                        .param("eintraege[0].statusId", String.valueOf(anwesend.getId()))
+                        .param("eintraege[0].ankunftszeit", "08:20")
+                        .param("eintraege[0].verlassenUm", "15:00")
+                        .param("eintraege[0].kommentar", "Arzttermin"))
+                .andExpect(redirectedUrl("/anwesenheit/" + gruppe.getId()));
+
+        // Assert: times are stored in their own columns and the comment is unchanged
+        Erfassung gespeichert = transactionTemplate.execute(tx ->
+                erfassungRepository.findByStudenten_id(student.getId()).get(0));
+        assertEquals(LocalTime.of(8, 20), gespeichert.getAnkunftszeit());
+        assertEquals(LocalTime.of(15, 0), gespeichert.getVerlassenUm());
+        assertEquals("Arzttermin", gespeichert.getKommentar());
+
+        // Assert: reopening the form shows the saved values, so saving again keeps them
+        String html = render(get("/anwesenheit/{id}", gruppe.getId()));
+        assertTrue(inputTag(html, "eintraege0.ankunftszeit").contains("value=\"08:20\""));
+        assertTrue(inputTag(html, "eintraege0.verlassenUm").contains("value=\"15:00\""));
+        assertTrue(inputTag(html, "eintraege0.kommentar").contains("value=\"Arzttermin\""));
+
+        // Assert: arriving after 08:00 counts as late
+        mockMvc.perform(get("/studenten/{id}", student.getId()).with(teacher()))
+                .andExpect(model().attribute("statistik", hasProperty("verspaetungen", is(1L))));
+    }
+
+    @Test
+    public void testSpeichern_StudentFromOtherGroup_IsRejected() throws Exception {
+        // Arrange
+        Gruppe andereGruppe = gruppeRepository.save(new Gruppe("Andere Gruppe"));
+        Studenten fremderStudent = studentenRepository.save(new Studenten("Fremd", "Fritz", andereGruppe));
+
+        // Act
+        mockMvc.perform(post("/anwesenheit/{id}/speichern", gruppe.getId()).with(teacher()).with(csrf())
+                        .param("eintraege[0].studentenId", String.valueOf(fremderStudent.getId()))
+                        .param("eintraege[0].statusId", String.valueOf(anwesend.getId())))
+                .andExpect(status().isOk())
+                .andExpect(view().name("anwesenheit"))
+                .andExpect(content().string(containsString("gehört nicht zu dieser Gruppe")));
+
+        // Assert
         assertEquals(0, erfassungRepository.count());
     }
 

@@ -9,14 +9,17 @@ import com.art.erfassung.repository.StatusRepository;
 import com.art.erfassung.repository.StudentenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Serviceklasse zur Verwaltung von Erfassungen.
@@ -27,6 +30,9 @@ import java.util.Optional;
  */
 @Service
 public class ErfassungService {
+
+    // Uhrzeiten aus dem Formular, z. B. "08:30" (auch "8:30" wird akzeptiert)
+    private static final DateTimeFormatter ZEIT_FORMAT = DateTimeFormatter.ofPattern("H:mm");
 
     // Repository zur Verwaltung der Erfassungen
     private final ErfassungRepository erfassungRepository;
@@ -43,65 +49,81 @@ public class ErfassungService {
     }
 
     /**
-     * Verarbeitet eine Liste von AnwesenheitDTOs zur Erfassung der Anwesenheitsdaten.
+     * Speichert die Anwesenheit einer Gruppe für den heutigen Tag.
      * <p>
      * Diese Methode führt folgende Aufgaben aus:
      * <ul>
-     *   <li>Bestimmt das aktuelle Datum und definiert als Soll-Ankunftszeit 08:00 Uhr.</li>
-     *   <li>Iteriert über die übergebene Liste von AnwesenheitDTOs:
-     *     <ul>
-     *       <li>Lädt für jeden DTO den entsprechenden Studenten und den Status mithilfe der entsprechenden Services.</li>
-     *       <li>Setzt die Gruppen-ID anhand des Studenten – es wird angenommen, dass alle Einträge derselben Gruppe angehören.</li>
-     *       <li>Wenn der Eingabestring für die Ankunftszeit leer oder null ist, wird angenommen, dass der Student pünktlich (08:00 Uhr) erschienen ist.</li>
-     *       <li>Falls die tatsächliche Ankunftszeit später als die Soll-Ankunftszeit ist, wird die Verspätung in Minuten berechnet und in den Kommentar aufgenommen.</li>
-     *       <li>Überprüft, ob bereits eine Erfassung für den Studenten am aktuellen Datum existiert.
-     *           Falls ja, wird der bestehende Datensatz aktualisiert, ansonsten wird ein neuer Eintrag erstellt.</li>
-     *     </ul>
-     *   </li>
-     *   <li>Alle Erfassungen werden in einer Liste gesammelt und als Batch gespeichert.</li>
+     *   <li>Lädt die Studenten der Gruppe, alle Status und die heutigen Erfassungen der Gruppe mit je einer Abfrage.</li>
+     *   <li>Prüft alle Einträge: Jeder Student muss zur Gruppe gehören, der Status muss existieren und
+     *       die Verlassen-Zeit darf nicht vor der Ankunftszeit liegen. Ist ein Eintrag ungültig, wird nichts geändert.</li>
+     *   <li>Aktualisiert eine bestehende Erfassung des Studenten für heute oder legt eine neue an.
+     *       Ankunfts- und Verlassen-Zeit werden in eigenen Spalten gespeichert, leere Werte als {@code null}.</li>
+     *   <li>Speichert alle Erfassungen in einer Transaktion.</li>
      * </ul>
      * </p>
      *
-     * @param dtos Eine Liste von AnwesenheitDTOs, die die vom Benutzer eingegebenen Anwesenheitsdaten enthalten.
-     * @return Die Gruppen-ID, zu der die Anwesenheitsdatensätze gehören, oder null, falls sie nicht ermittelt werden konnte.
-     * @throws DateTimeParseException falls ein nicht-leerer Ankunftszeit-String nicht in ein {@link LocalTime} geparst werden kann.
+     * @param gruppeId die ID der Gruppe, für die die Anwesenheit erfasst wird
+     * @param dtos     die vom Benutzer eingegebenen Anwesenheitsdaten
+     * @throws IllegalArgumentException wenn ein Student nicht zur Gruppe gehört, ein Status unbekannt ist
+     *                                  oder die Verlassen-Zeit vor der Ankunftszeit liegt
+     * @throws java.time.format.DateTimeParseException wenn eine Uhrzeit nicht im Format HH:MM vorliegt
      */
+    @Transactional
+    public void erfassenAnwesenheiten(Integer gruppeId, List<ErfassungDTO> dtos) {
+        LocalDate heute = LocalDate.now();
+        Map<Integer, Studenten> studentenDerGruppe = studentenRepository.findByGruppeId(gruppeId).stream()
+                .collect(Collectors.toMap(Studenten::getId, Function.identity()));
+        Map<Integer, Status> statusNachId = statusRepository.findAll().stream()
+                .collect(Collectors.toMap(Status::getId, Function.identity()));
 
-    public Integer erfassenAnwesenheiten(List<ErfassungDTO> dtos) {
-        LocalDate datum = LocalDate.now();
-        LocalTime expectedTime = LocalTime.of(8, 0);
-        Integer gruppeId = null;
-        List<Erfassung> erfassungenToSave = new ArrayList<>();
+        // Zuerst alle Einträge prüfen, damit bei einem ungültigen Eintrag keine Erfassung verändert wird
+        List<GeprueftEintrag> eintraege = new ArrayList<>();
         for (ErfassungDTO dto : dtos) {
-            Studenten student = studentenRepository.findById(dto.getStudentenId()).orElseThrow();
-            Status status = statusRepository.findById(dto.getStatusId()).orElseThrow();
-            String kommentar = dto.getKommentar();
-            gruppeId = student.getGruppe().getId();
-            String ankunftStr = dto.getAnkunftszeit();
-            LocalTime ankunftszeit;
-            if (ankunftStr == null || ankunftStr.trim().isEmpty()) {
-                ankunftszeit = expectedTime;
-            } else {
-                ankunftszeit = LocalTime.parse(ankunftStr);
+            Studenten student = studentenDerGruppe.get(dto.getStudentenId());
+            if (student == null) {
+                throw new IllegalArgumentException(
+                        "Der Student mit der ID " + dto.getStudentenId() + " gehört nicht zu dieser Gruppe.");
             }
-            if (ankunftszeit.isAfter(expectedTime)) {
-                long delayMinutes = ChronoUnit.MINUTES.between(expectedTime, ankunftszeit);
-                kommentar = (kommentar != null && !kommentar.isEmpty())
-                        ? kommentar + " | Verspätung: " + delayMinutes + " Minuten"
-                        : "Verspätung: " + delayMinutes + " Minuten";
+            Status status = statusNachId.get(dto.getStatusId());
+            if (status == null) {
+                throw new IllegalArgumentException("Unbekannter Status mit der ID " + dto.getStatusId() + ".");
             }
-            final String finalKommentar = kommentar;
-            Erfassung erfassung = findByStudentAndDate(student.getId(), datum)
-                    .map(e -> {
-                        e.setStatus(status);
-                        e.setKommentar(finalKommentar);
-                        return e;
-                    })
-                    .orElseGet(() -> new Erfassung(student, datum, status, finalKommentar));
+            LocalTime ankunftszeit = parseZeit(dto.getAnkunftszeit());
+            LocalTime verlassenUm = parseZeit(dto.getVerlassenUm());
+            if (ankunftszeit != null && verlassenUm != null && verlassenUm.isBefore(ankunftszeit)) {
+                throw new IllegalArgumentException(student.getVorname() + " " + student.getName()
+                        + ": Die Verlassen-Zeit liegt vor der Ankunftszeit.");
+            }
+            String kommentar = dto.getKommentar() == null || dto.getKommentar().isBlank()
+                    ? null : dto.getKommentar().trim();
+            eintraege.add(new GeprueftEintrag(student, status, ankunftszeit, verlassenUm, kommentar));
+        }
+
+        // Bestehende Erfassungen von heute aktualisieren, fehlende neu anlegen
+        Map<Integer, Erfassung> heutigeErfassungen = findByGruppeUndMonat(gruppeId, heute, heute).stream()
+                .collect(Collectors.toMap(e -> e.getStudenten().getId(), Function.identity(), (erste, zweite) -> erste));
+        List<Erfassung> erfassungenToSave = new ArrayList<>();
+        for (GeprueftEintrag eintrag : eintraege) {
+            Erfassung erfassung = heutigeErfassungen.get(eintrag.student().getId());
+            if (erfassung == null) {
+                erfassung = new Erfassung(eintrag.student(), heute, eintrag.status(), eintrag.kommentar());
+            }
+            erfassung.setStatus(eintrag.status());
+            erfassung.setKommentar(eintrag.kommentar());
+            erfassung.setAnkunftszeit(eintrag.ankunftszeit());
+            erfassung.setVerlassenUm(eintrag.verlassenUm());
             erfassungenToSave.add(erfassung);
         }
         saveAll(erfassungenToSave);
-        return gruppeId;
+    }
+
+    // Ein bereits geprüfter Formulareintrag
+    private record GeprueftEintrag(Studenten student, Status status, LocalTime ankunftszeit,
+                                   LocalTime verlassenUm, String kommentar) {
+    }
+
+    private static LocalTime parseZeit(String zeit) {
+        return zeit == null || zeit.isBlank() ? null : LocalTime.parse(zeit.trim(), ZEIT_FORMAT);
     }
 
     /**

@@ -29,6 +29,9 @@
                     <span th:each="erfassung : ${erfassungen}"
                           th:if="${erfassung.studenten.id == student.id and erfassung.datum?.dayOfMonth == tag}"
                           class="status-indicator"
+                          th:title="${erfassung.status.bezeichnung
+                              + (erfassung.ankunftszeit != null ? ', Ankunft ' + erfassung.ankunftszeit : '')
+                              + (erfassung.verlassenUm != null ? ', Verlassen ' + erfassung.verlassenUm : '')}"
                           th:classappend="
                 ${erfassung.status.bezeichnung == 'Anwesend'} ? ' status-anwesend' :
                 (${erfassung.status.bezeichnung == 'Entschuldigt'} ? ' status-entschuldigt' :

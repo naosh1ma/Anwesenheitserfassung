@@ -116,6 +116,27 @@ ALTER TABLE benutzer ADD COLUMN rolle VARCHAR(20);
 ALTER TABLE benutzer MODIFY passwort VARCHAR(255);
 ```
 
+## Anwesenheitserfassung
+
+### Ankunfts- und Verlassen-Zeit
+Ankunfts- und Verlassen-Zeit werden pro Erfassung in eigenen Spalten gespeichert (`ankunftszeit`, `verlassen_um`). Wird das Formular am selben Tag erneut geöffnet, sind die bereits gespeicherten Werte vorausgefüllt. Beim Speichern wird geprüft, dass alle Studenten zur Gruppe gehören und die Verlassen-Zeit nicht vor der Ankunftszeit liegt; ist ein Eintrag ungültig, wird nichts gespeichert.
+
+### Verspätungen
+Eine Ankunft nach dem Unterrichtsbeginn zählt als Verspätung. Der Unterrichtsbeginn ist standardmäßig 08:00 und kann über eine Umgebungsvariable geändert werden:
+
+```bash
+export UNTERRICHTSBEGINN=08:30
+```
+
+Ältere Erfassungen ohne gespeicherte Ankunftszeit zählen weiterhin als Verspätung, wenn ihr Kommentar „Verspätung“ enthält, da Verspätungen früher nur im Kommentar vermerkt wurden.
+
+Im `dev`-Profil werden die neuen Spalten automatisch angelegt. Im `prod`-Profil (Schema-Validierung) führen Sie vor dem Start aus:
+
+```sql
+ALTER TABLE erfassung ADD COLUMN ankunftszeit TIME;
+ALTER TABLE erfassung ADD COLUMN verlassen_um TIME;
+```
+
 ## Projektstruktur
 
 ```
@@ -173,6 +194,9 @@ DB_PASSWORD=your-secure-password
 # Erster Administrator (nur nötig, solange noch kein Administrator existiert)
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your-secure-admin-password
+
+# Unterrichtsbeginn für die Verspätungsberechnung (optional, Standard 08:00)
+UNTERRICHTSBEGINN=08:00
 
 # Spring Profil
 SPRING_PROFILES_ACTIVE=prod

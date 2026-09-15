@@ -3,9 +3,11 @@ package com.art.erfassung.service;
 import com.art.erfassung.model.Erfassung;
 import com.art.erfassung.model.Studenten;
 import com.art.erfassung.repository.ErfassungRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,8 +25,13 @@ public class StatistikService {
     // Repository zur Abfrage der Erfassungsdaten
     private final ErfassungRepository erfassungRepository;
 
-    public StatistikService(ErfassungRepository erfassungRepository) {
+    // Unterrichtsbeginn: spätere Ankunftszeiten zählen als Verspätung
+    private final LocalTime unterrichtsbeginn;
+
+    public StatistikService(ErfassungRepository erfassungRepository,
+                            @Value("${app.unterricht.beginn:08:00}") String unterrichtsbeginn) {
         this.erfassungRepository = erfassungRepository;
+        this.unterrichtsbeginn = LocalTime.parse(unterrichtsbeginn.trim(), DateTimeFormatter.ofPattern("H:mm"));
     }
 
     /**
@@ -36,7 +43,7 @@ public class StatistikService {
      *     <li>Anzahl der "Entschuldigt"-Einträge</li>
      *     <li>Anzahl der "Unentschuldigt"-Einträge</li>
      *     <li>Anzahl der "Krankmeldung"-Einträge</li>
-     *     <li>Anzahl der Verspätungen (Erfassungen, deren Kommentar das Wort "verspätung" enthält)</li>
+     *     <li>Anzahl der Verspätungen (Ankunft nach dem Unterrichtsbeginn, siehe {@link #istVerspaetet(Erfassung)})</li>
      * </ul>
      *
      * @param studentId die eindeutige ID des Studenten
@@ -50,11 +57,9 @@ public class StatistikService {
         Map<String, Long> statusCount = erfassungen.stream()
                 .collect(Collectors.groupingBy(e -> e.getStatus().
                         getBezeichnung(), Collectors.counting()));
-        // Berechne die Anzahl der Erfassungen, bei denen im Kommentar der Begriff "verspätung"
-        // (unabhängig von Groß-/Kleinschreibung) vorkommt. Falls der Kommentar null ist, wird ein leerer String verwendet.
+        // Anzahl der Verspätungen ermitteln.
         long verspaetet = erfassungen.stream()
-                .filter(e -> Optional.ofNullable(e.getKommentar()).
-                        orElse("").toLowerCase().contains("verspätung"))
+                .filter(this::istVerspaetet)
                 .count();
         // Anzahl der "Anwesend"-Erfassungen aus der Status-Gruppe extrahieren.
         long anwesend = statusCount.getOrDefault("Anwesend", 0L);
@@ -69,6 +74,24 @@ public class StatistikService {
                 statusCount.getOrDefault("Unentschuldigt", 0L),
                 statusCount.getOrDefault("Krankmeldung", 0L),
                 verspaetet);
+    }
+
+    /**
+     * Prüft, ob eine Erfassung als Verspätung zählt.
+     * <p>
+     * Maßgeblich ist die gespeicherte Ankunftszeit: Liegt sie nach dem Unterrichtsbeginn, zählt die Erfassung
+     * als Verspätung. Ältere Erfassungen ohne gespeicherte Ankunftszeit zählen als Verspätung, wenn ihr Kommentar
+     * das Wort "Verspätung" enthält, da Verspätungen früher nur im Kommentar vermerkt wurden.
+     * </p>
+     *
+     * @param erfassung die zu prüfende Erfassung
+     * @return {@code true}, wenn die Erfassung als Verspätung zählt
+     */
+    private boolean istVerspaetet(Erfassung erfassung) {
+        if (erfassung.getAnkunftszeit() != null) {
+            return erfassung.getAnkunftszeit().isAfter(unterrichtsbeginn);
+        }
+        return Optional.ofNullable(erfassung.getKommentar()).orElse("").toLowerCase().contains("verspätung");
     }
 
     /**

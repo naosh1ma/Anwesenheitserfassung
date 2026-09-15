@@ -11,16 +11,19 @@ import com.art.erfassung.repository.StudentenRepository;
 import com.art.erfassung.service.ErfassungService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -39,7 +42,6 @@ public class ErfassungServiceTest {
 
     private ErfassungService erfassungService;
 
-    private Gruppe testGruppe;
     private Studenten testStudent;
     private Status testStatus;
 
@@ -49,7 +51,7 @@ public class ErfassungServiceTest {
         erfassungService = new ErfassungService(erfassungRepository, statusRepository, studentenRepository);
 
         // Setup test data
-        testGruppe = new Gruppe("Test Gruppe");
+        Gruppe testGruppe = new Gruppe("Test Gruppe");
         testGruppe.setId(1);
 
         testStudent = new Studenten("Mustermann", "Max", testGruppe);
@@ -58,103 +60,91 @@ public class ErfassungServiceTest {
         testStatus = new Status();
         testStatus.setId(1);
         testStatus.setBezeichnung("Anwesend");
+
+        when(studentenRepository.findByGruppeId(1)).thenReturn(List.of(testStudent));
+        when(statusRepository.findAll()).thenReturn(List.of(testStatus));
+        when(erfassungRepository.findByStudenten_GruppeIdAndDatumBetween(eq(1), any(), any())).thenReturn(List.of());
     }
 
     @Test
-    public void testErfassenAnwesenheiten_NewErfassung() {
-        // Arrange
-        ErfassungDTO dto = new ErfassungDTO();
-        dto.setStudentenId(1);
-        dto.setStatusId(1);
-        dto.setAnkunftszeit("08:30");
-        dto.setKommentar("Test Kommentar");
-
-        when(studentenRepository.findById(1)).thenReturn(Optional.of(testStudent));
-        when(statusRepository.findById(1)).thenReturn(Optional.of(testStatus));
-        when(erfassungRepository.findByStudenten_IdAndDatum(1, LocalDate.now()))
-                .thenReturn(Optional.empty());
-        when(erfassungRepository.saveAll(any())).thenReturn(Arrays.asList());
-
+    public void testErfassenAnwesenheiten_NewErfassung_StoresTimesAndComment() {
         // Act
-        Integer result = erfassungService.erfassenAnwesenheiten(Arrays.asList(dto));
+        erfassungService.erfassenAnwesenheiten(1, List.of(dto(1, 1, "08:15", "16:30", "Test Kommentar")));
 
         // Assert
-        assertEquals(1, result);
-        verify(studentenRepository).findById(1);
-        verify(statusRepository).findById(1);
-        verify(erfassungRepository).findByStudenten_IdAndDatum(1, LocalDate.now());
-        verify(erfassungRepository).saveAll(any());
+        List<Erfassung> gespeichert = captureSaved();
+        assertEquals(1, gespeichert.size());
+        Erfassung erfassung = gespeichert.get(0);
+        assertEquals(testStudent, erfassung.getStudenten());
+        assertEquals(testStatus, erfassung.getStatus());
+        assertEquals(LocalDate.now(), erfassung.getDatum());
+        assertEquals(LocalTime.of(8, 15), erfassung.getAnkunftszeit());
+        assertEquals(LocalTime.of(16, 30), erfassung.getVerlassenUm());
+        // Late arrivals are no longer written into the comment
+        assertEquals("Test Kommentar", erfassung.getKommentar());
     }
 
     @Test
-    public void testErfassenAnwesenheiten_UpdateExistingErfassung() {
+    public void testErfassenAnwesenheiten_UpdatesExistingErfassung() {
         // Arrange
-        ErfassungDTO dto = new ErfassungDTO();
-        dto.setStudentenId(1);
-        dto.setStatusId(1);
-        dto.setAnkunftszeit("08:30");
-        dto.setKommentar("Aktualisierter Kommentar");
-
-        Erfassung existingErfassung = new Erfassung(testStudent, LocalDate.now(), testStatus, "Alter Kommentar");
-
-        when(studentenRepository.findById(1)).thenReturn(Optional.of(testStudent));
-        when(statusRepository.findById(1)).thenReturn(Optional.of(testStatus));
-        when(erfassungRepository.findByStudenten_IdAndDatum(1, LocalDate.now()))
-                .thenReturn(Optional.of(existingErfassung));
-        when(erfassungRepository.saveAll(any())).thenReturn(Arrays.asList(existingErfassung));
+        Erfassung vorhanden = new Erfassung(testStudent, LocalDate.now(), testStatus, "Alter Kommentar");
+        vorhanden.setVerlassenUm(LocalTime.of(12, 0));
+        when(erfassungRepository.findByStudenten_GruppeIdAndDatumBetween(eq(1), any(), any()))
+                .thenReturn(List.of(vorhanden));
 
         // Act
-        Integer result = erfassungService.erfassenAnwesenheiten(Arrays.asList(dto));
+        erfassungService.erfassenAnwesenheiten(1, List.of(dto(1, 1, "09:00", "", "Neuer Kommentar")));
 
         // Assert
-        assertEquals(1, result);
-        verify(erfassungRepository).saveAll(any());
+        Erfassung erfassung = captureSaved().get(0);
+        assertSame(vorhanden, erfassung);
+        assertEquals("Neuer Kommentar", erfassung.getKommentar());
+        assertEquals(LocalTime.of(9, 0), erfassung.getAnkunftszeit());
+        assertNull(erfassung.getVerlassenUm());
     }
 
     @Test
-    public void testErfassenAnwesenheiten_WithDelay() {
-        // Arrange
-        ErfassungDTO dto = new ErfassungDTO();
-        dto.setStudentenId(1);
-        dto.setStatusId(1);
-        dto.setAnkunftszeit("08:15"); // 15 minutes late
-        dto.setKommentar("Test Kommentar");
-
-        when(studentenRepository.findById(1)).thenReturn(Optional.of(testStudent));
-        when(statusRepository.findById(1)).thenReturn(Optional.of(testStatus));
-        when(erfassungRepository.findByStudenten_IdAndDatum(1, LocalDate.now()))
-                .thenReturn(Optional.empty());
-        when(erfassungRepository.saveAll(any())).thenReturn(Arrays.asList());
-
+    public void testErfassenAnwesenheiten_EmptyValues_StoredAsNull() {
         // Act
-        Integer result = erfassungService.erfassenAnwesenheiten(Arrays.asList(dto));
+        erfassungService.erfassenAnwesenheiten(1, List.of(dto(1, 1, "", null, "  ")));
 
         // Assert
-        assertEquals(1, result);
-        verify(erfassungRepository).saveAll(any());
+        Erfassung erfassung = captureSaved().get(0);
+        assertNull(erfassung.getAnkunftszeit());
+        assertNull(erfassung.getVerlassenUm());
+        assertNull(erfassung.getKommentar());
     }
 
     @Test
-    public void testErfassenAnwesenheiten_EmptyAnkunftszeit() {
-        // Arrange
-        ErfassungDTO dto = new ErfassungDTO();
-        dto.setStudentenId(1);
-        dto.setStatusId(1);
-        dto.setAnkunftszeit(null); // No arrival time
-        dto.setKommentar("Test Kommentar");
+    public void testErfassenAnwesenheiten_StudentFromOtherGroup_Throws() {
+        // Act & Assert
+        IllegalArgumentException fehler = assertThrows(IllegalArgumentException.class,
+                () -> erfassungService.erfassenAnwesenheiten(1, List.of(dto(99, 1, "", "", ""))));
+        assertTrue(fehler.getMessage().contains("gehört nicht zu dieser Gruppe"));
+        verify(erfassungRepository, never()).saveAll(any());
+    }
 
-        when(studentenRepository.findById(1)).thenReturn(Optional.of(testStudent));
-        when(statusRepository.findById(1)).thenReturn(Optional.of(testStatus));
-        when(erfassungRepository.findByStudenten_IdAndDatum(1, LocalDate.now()))
-                .thenReturn(Optional.empty());
-        when(erfassungRepository.saveAll(any())).thenReturn(Arrays.asList());
+    @Test
+    public void testErfassenAnwesenheiten_LeaveBeforeArrival_Throws() {
+        assertThrows(IllegalArgumentException.class,
+                () -> erfassungService.erfassenAnwesenheiten(1, List.of(dto(1, 1, "10:00", "09:00", ""))));
+        verify(erfassungRepository, never()).saveAll(any());
+    }
+
+    @Test
+    public void testErfassenAnwesenheiten_InvalidEntry_ChangesNothing() {
+        // Arrange: a valid entry for an existing record, followed by an invalid entry
+        Erfassung vorhanden = new Erfassung(testStudent, LocalDate.now(), testStatus, "Alt");
+        when(erfassungRepository.findByStudenten_GruppeIdAndDatumBetween(eq(1), any(), any()))
+                .thenReturn(List.of(vorhanden));
 
         // Act
-        Integer result = erfassungService.erfassenAnwesenheiten(Arrays.asList(dto));
+        assertThrows(IllegalArgumentException.class, () -> erfassungService.erfassenAnwesenheiten(1,
+                List.of(dto(1, 1, "08:00", "", "Neu"), dto(99, 1, "", "", ""))));
 
         // Assert
-        assertEquals(1, result);
-        verify(erfassungRepository).saveAll(any());
+        assertEquals("Alt", vorhanden.getKommentar());
+        verify(erfassungRepository, never()).saveAll(any());
     }
 
     @Test
@@ -204,5 +194,22 @@ public class ErfassungServiceTest {
 
         // Assert
         verify(erfassungRepository).saveAll(erfassungen);
+    }
+
+    private static ErfassungDTO dto(int studentId, int statusId, String ankunftszeit, String verlassenUm, String kommentar) {
+        ErfassungDTO dto = new ErfassungDTO();
+        dto.setStudentenId(studentId);
+        dto.setStatusId(statusId);
+        dto.setAnkunftszeit(ankunftszeit);
+        dto.setVerlassenUm(verlassenUm);
+        dto.setKommentar(kommentar);
+        return dto;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private List<Erfassung> captureSaved() {
+        ArgumentCaptor<List<Erfassung>> captor = ArgumentCaptor.forClass((Class) List.class);
+        verify(erfassungRepository).saveAll(captor.capture());
+        return captor.getValue();
     }
 }

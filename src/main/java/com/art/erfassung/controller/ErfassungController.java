@@ -2,6 +2,7 @@ package com.art.erfassung.controller;
 
 import com.art.erfassung.dto.ErfassungDTO;
 import com.art.erfassung.dto.ErfassungForm;
+import com.art.erfassung.model.Erfassung;
 import com.art.erfassung.model.Gruppe;
 import com.art.erfassung.model.Status;
 import com.art.erfassung.model.Studenten;
@@ -19,10 +20,14 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +41,9 @@ import java.util.stream.Collectors;
 @Controller
 @RequestMapping("/anwesenheit")
 public class ErfassungController{
+
+    // Anzeigeformat für Uhrzeiten im Formular
+    private static final DateTimeFormatter ZEIT_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
     // Service zur Verwaltung von Studenten
     private final StudentenService studentenService;
@@ -64,8 +72,9 @@ public class ErfassungController{
      *   <li>Die Gruppe wird anhand der übergebenen Gruppen-ID abgefragt. Falls die Gruppe
      *       nicht existiert, wird eine Exception geworfen.</li>
      *   <li>Die Liste der Studenten, die der Gruppe zugeordnet sind, wird ermittelt.</li>
-     *   <li>Ein {@code ErfassungForm}-Objekt wird erstellt und für jeden Studenten ein
-     *       {@code ErfassungDTO} initialisiert, das mit dem Status "Anwesend" vorbelegt ist.</li>
+     *   <li>Ein {@code ErfassungForm}-Objekt wird erstellt. Wurde für einen Studenten heute bereits eine
+     *       Erfassung gespeichert, werden deren Werte übernommen, damit erneutes Speichern nichts überschreibt.
+     *       Andernfalls ist der Student mit dem Status "Anwesend" vorbelegt.</li>
      *   <li>Die benötigten Model-Attribute (Formular, Gruppe und Statusliste)
      *       werden dem Model hinzugefügt.</li>
      *   <li>Die Methode gibt den View-Namen "anwesenheit" zurück, sodass das entsprechende
@@ -83,10 +92,14 @@ public class ErfassungController{
         Gruppe gruppe = gruppeService.findOrThrow(gruppeId);
         // Alle Studenten der Gruppe abrufen.
         List<Studenten> studentenListe = studentenService.findByGruppeId(gruppeId);
-        // Status "Anwesend" laden, mit dem jeder Student vorbelegt wird.
+        // Status "Anwesend" laden, mit dem jeder Student ohne heutige Erfassung vorbelegt wird.
         Status anwesend = statusService.findAnwesend();
+        // Heute bereits gespeicherte Erfassungen der Gruppe, nach Studenten-ID.
+        LocalDate heute = LocalDate.now();
+        Map<Integer, Erfassung> heutigeErfassungen = erfassungService.findByGruppeUndMonat(gruppeId, heute, heute).stream()
+                .collect(Collectors.toMap(e -> e.getStudenten().getId(), Function.identity(), (erste, zweite) -> erste));
         // Erstelle ein neues Formularobjekt, das die Erfassungsdaten kapselt.
-        ErfassungForm form = getErfassungForm(studentenListe, anwesend.getId());
+        ErfassungForm form = getErfassungForm(studentenListe, anwesend.getId(), heutigeErfassungen);
 
         // Füge alle nötigen Model-Attribute hinzu
         model.addAttribute("anwesenheitForm", form);
@@ -94,7 +107,8 @@ public class ErfassungController{
         return "anwesenheit";
     }
 
-    private static ErfassungForm getErfassungForm(List<Studenten> studentenListe, Integer anwesendStatusId) {
+    private static ErfassungForm getErfassungForm(List<Studenten> studentenListe, Integer anwesendStatusId,
+                                                  Map<Integer, Erfassung> heutigeErfassungen) {
         ErfassungForm form = new ErfassungForm();
         // Initialisiere die Liste der Einträge
         List<ErfassungDTO> eintraege = new ArrayList<>();
@@ -103,14 +117,26 @@ public class ErfassungController{
             ErfassungDTO dto = new ErfassungDTO();
             dto.setStudentenId(student.getId());
             dto.setStudentenName(student.getVorname() + " " + student.getName());
-            // Standardmäßig ist jeder Student anwesend.
-            dto.setStatusId(anwesendStatusId);
-            // Weitere Felder (z. B. Ankunftszeit, Kommentar etc.) werden leer gelassen und im Formular ausgefüllt.
+            Erfassung erfassung = heutigeErfassungen.get(student.getId());
+            if (erfassung != null) {
+                // Heute bereits gespeicherte Werte übernehmen.
+                dto.setStatusId(erfassung.getStatus().getId());
+                dto.setAnkunftszeit(formatZeit(erfassung.getAnkunftszeit()));
+                dto.setVerlassenUm(formatZeit(erfassung.getVerlassenUm()));
+                dto.setKommentar(erfassung.getKommentar());
+            } else {
+                // Standardmäßig ist jeder Student anwesend.
+                dto.setStatusId(anwesendStatusId);
+            }
             eintraege.add(dto);
         }
         // Setze die Einträge im Formularobjekt.
         form.setEintraege(eintraege);
         return form;
+    }
+
+    private static String formatZeit(LocalTime zeit) {
+        return zeit == null ? null : zeit.format(ZEIT_FORMAT);
     }
 
     /**
@@ -144,8 +170,8 @@ public class ErfassungController{
      * <p>
      * Diese Methode validiert die über das Formular empfangenen Daten. Falls Validierungsfehler vorliegen,
      * wird das Formular mit den eingegebenen Daten und einer Fehlermeldung erneut angezeigt.
-     * Andernfalls werden die Anwesenheitsdaten aus dem Formular an den Service delegiert, der die Geschäftslogik
-     * (zum Beispiel Verspätungsberechnung und Speicherung der Erfassungen) umsetzt. Nach erfolgreicher Verarbeitung
+     * Andernfalls werden die Anwesenheitsdaten aus dem Formular an den Service delegiert, der sie prüft
+     * und in einer Transaktion speichert. Nach erfolgreicher Verarbeitung
      * erfolgt eine Weiterleitung zurück zum Formular der Gruppe.
      * </p>
      *
@@ -183,8 +209,8 @@ public class ErfassungController{
         }
 
         try {
-            // Delegiere die Verarbeitung der Anwesenheitsdaten an die Service-Schicht.
-            erfassungService.erfassenAnwesenheiten(form.getEintraege());
+            // Delegiere die Prüfung und Speicherung der Anwesenheitsdaten an die Service-Schicht.
+            erfassungService.erfassenAnwesenheiten(gruppeId, form.getEintraege());
 
             // Logge den erfolgreichen Abschluss der Verarbeitung.
             logger.info("Anwesenheit für Gruppe {} wurde erfolgreich verarbeitet.", gruppeId);
@@ -195,6 +221,12 @@ public class ErfassungController{
 
             return "redirect:/anwesenheit/" + gruppeId;
 
+        } catch (IllegalArgumentException e) {
+            // Ungültige Einträge (z. B. Student aus einer anderen Gruppe): es wurde nichts gespeichert.
+            logger.warn("Ungültige Anwesenheitsdaten für Gruppe {}: {}", gruppeId, e.getMessage());
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("errorType", "validation");
+            return showFormAgain(gruppeId, form, model);
         } catch (Exception e) {
             logger.error("Fehler beim Speichern der Anwesenheitsdaten: {}", e.getMessage(), e);
             model.addAttribute("errorMessage", "Fehler beim Speichern der Daten. Bitte versuchen Sie es erneut.");

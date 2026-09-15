@@ -148,6 +148,18 @@ public class ErfassungServiceTest {
     }
 
     @Test
+    public void testErfassenAnwesenheiten_DeactivatedStudent_Throws() {
+        // Arrange
+        testStudent.setDeaktiviertAm(LocalDate.now().minusDays(1));
+
+        // Act & Assert
+        IllegalArgumentException fehler = assertThrows(IllegalArgumentException.class,
+                () -> erfassungService.erfassenAnwesenheiten(1, List.of(dto(1, 1, "", "", ""))));
+        assertTrue(fehler.getMessage().contains("deaktiviert"));
+        verify(erfassungRepository, never()).saveAll(any());
+    }
+
+    @Test
     public void testFindByGruppeUndMonat() {
         // Arrange
         LocalDate startDate = LocalDate.of(2024, 1, 1);

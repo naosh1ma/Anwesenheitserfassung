@@ -41,6 +41,10 @@
                 <div class="empty-state-icon">📚</div>
                 <h3>Keine Gruppen gefunden</h3>
                 <p>Es sind derzeit keine Gruppen verfügbar. Kontaktieren Sie den Administrator, um Gruppen hinzuzufügen.</p>
+                <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" th:href="@{/admin/gruppen}" class="btn btn-secondary">
+                    <span class="icon">🗂️</span>
+                    Gruppen verwalten
+                </a>
                 <a th:href="@{/willkommen}" class="btn btn-primary">
                     <span class="icon">🏠</span>
                     Zur Startseite

@@ -15,10 +15,26 @@ import java.util.List;
 @Repository
 public interface StudentenRepository extends JpaRepository<Studenten, Integer> {
     /**
-     * Sucht alle Studenten, die der angegebenen Gruppe zugeordnet sind.
+     * Sucht alle Studenten, die der angegebenen Gruppe zugeordnet sind, aktive und deaktivierte.
      *
      * @param gruppe_id die ID der Gruppe, deren Studenten gesucht werden
      * @return eine Liste von {@link Studenten} Objekten, die der angegebenen Gruppe angehören
      */
     List<Studenten> findByGruppeId(Integer gruppe_id);
+
+    /**
+     * Sucht alle aktiven (nicht deaktivierten) Studenten einer Gruppe.
+     *
+     * @param gruppeId die ID der Gruppe
+     * @return die aktiven Studenten der Gruppe
+     */
+    List<Studenten> findByGruppeIdAndDeaktiviertAmIsNull(Integer gruppeId);
+
+    /**
+     * Zählt alle Studenten einer Gruppe, aktive und deaktivierte.
+     *
+     * @param gruppeId die ID der Gruppe
+     * @return die Anzahl der Studenten
+     */
+    long countByGruppeId(Integer gruppeId);
 }

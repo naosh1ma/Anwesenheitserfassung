@@ -54,7 +54,7 @@ public class ErfassungService {
      * Diese Methode führt folgende Aufgaben aus:
      * <ul>
      *   <li>Lädt die Studenten der Gruppe, alle Status und die heutigen Erfassungen der Gruppe mit je einer Abfrage.</li>
-     *   <li>Prüft alle Einträge: Jeder Student muss zur Gruppe gehören, der Status muss existieren und
+     *   <li>Prüft alle Einträge: Jeder Student muss zur Gruppe gehören und aktiv sein, der Status muss existieren und
      *       die Verlassen-Zeit darf nicht vor der Ankunftszeit liegen. Ist ein Eintrag ungültig, wird nichts geändert.</li>
      *   <li>Aktualisiert eine bestehende Erfassung des Studenten für heute oder legt eine neue an.
      *       Ankunfts- und Verlassen-Zeit werden in eigenen Spalten gespeichert, leere Werte als {@code null}.</li>
@@ -64,8 +64,8 @@ public class ErfassungService {
      *
      * @param gruppeId die ID der Gruppe, für die die Anwesenheit erfasst wird
      * @param dtos     die vom Benutzer eingegebenen Anwesenheitsdaten
-     * @throws IllegalArgumentException wenn ein Student nicht zur Gruppe gehört, ein Status unbekannt ist
-     *                                  oder die Verlassen-Zeit vor der Ankunftszeit liegt
+     * @throws IllegalArgumentException wenn ein Student nicht zur Gruppe gehört oder deaktiviert ist, ein Status
+     *                                  unbekannt ist oder die Verlassen-Zeit vor der Ankunftszeit liegt
      * @throws java.time.format.DateTimeParseException wenn eine Uhrzeit nicht im Format HH:MM vorliegt
      */
     @Transactional
@@ -83,6 +83,10 @@ public class ErfassungService {
             if (student == null) {
                 throw new IllegalArgumentException(
                         "Der Student mit der ID " + dto.getStudentenId() + " gehört nicht zu dieser Gruppe.");
+            }
+            if (!student.isAktiv()) {
+                throw new IllegalArgumentException(student.getVorname() + " " + student.getName()
+                        + " ist deaktiviert. Für deaktivierte Studenten kann keine Anwesenheit erfasst werden.");
             }
             Status status = statusNachId.get(dto.getStatusId());
             if (status == null) {

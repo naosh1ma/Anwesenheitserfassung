@@ -28,6 +28,9 @@
                 <li><a th:href="@{/gruppen}" class="nav-link">
                     <span class="icon">📚</span> Gruppen
                 </a></li>
+                <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}"><a th:href="@{/admin/gruppen}" class="nav-link">
+                    <span class="icon">🗂️</span> Gruppen verwalten
+                </a></li>
                 <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}"><a th:href="@{/admin/benutzer}" class="nav-link">
                     <span class="icon">👥</span> Benutzer
                 </a></li>

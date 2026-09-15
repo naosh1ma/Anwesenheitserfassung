@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>Gruppen verwalten</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h2>Gruppen verwalten</h2>
+
+    <p th:if="${gruppen.empty}">Es gibt noch keine Gruppen. Legen Sie unten die erste Gruppe an.</p>
+
+    <div class="table-scroll" th:unless="${gruppen.empty}">
+        <table class="table table-bordered">
+            <thead>
+            <tr>
+                <th>Gruppe</th>
+                <th>Studenten</th>
+                <th>Umbenennen</th>
+                <th>Aktionen</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="gruppe : ${gruppen}"
+                th:with="aktiv=${aktiveStudenten[gruppe.id]}, deaktiviert=${deaktivierteStudenten[gruppe.id]}">
+                <td th:text="${gruppe.bezeichnung}">Gruppe</td>
+                <td>
+                    <span th:text="|${aktiv} aktiv|">0 aktiv</span>
+                    <span th:if="${deaktiviert > 0}" class="inaktiv-hinweis" th:text="|, ${deaktiviert} deaktiviert|"></span>
+                </td>
+                <td>
+                    <form th:action="@{/admin/gruppen/{id}/umbenennen(id=${gruppe.id})}" method="post" class="inline-form">
+                        <input type="text" name="bezeichnung" required th:value="${gruppe.bezeichnung}"
+                               th:attr="aria-label=|Neue Bezeichnung für ${gruppe.bezeichnung}|">
+                        <button type="submit" class="btn btn-secondary">Umbenennen</button>
+                    </form>
+                </td>
+                <td>
+                    <div class="inline-form">
+                        <a th:href="@{/admin/gruppen/{id}(id=${gruppe.id})}" class="btn btn-primary">Studenten verwalten</a>
+                        <!-- Nur leere Gruppen können gelöscht werden -->
+                        <form th:if="${aktiv + deaktiviert == 0}"
+                              th:action="@{/admin/gruppen/{id}/loeschen(id=${gruppe.id})}" method="post"
+                              onsubmit="return confirm('Diese Gruppe wirklich löschen?');">
+                            <button type="submit" class="btn btn-danger">Löschen</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Neue Gruppe anlegen</h3>
+    <form th:action="@{/admin/gruppen}" method="post" class="benutzer-form">
+        <div class="form-group">
+            <label for="bezeichnung">Bezeichnung</label>
+            <input type="text" id="bezeichnung" name="bezeichnung" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Gruppe anlegen</button>
+    </form>
+</div>
+</body>
+</html>

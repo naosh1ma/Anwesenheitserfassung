@@ -11,6 +11,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Controller zur Anzeige und Aktualisierung der Anwesenheitslisten.
@@ -43,13 +45,14 @@ public class ListeController {
      * <p>
      * Diese Methode verarbeitet GET-Anfragen an "/liste/{gruppenId}".
      * Es werden die Gruppe, ihre Studenten sowie die Anwesenheitsdaten innerhalb eines bestimmten Monats geladen.
-     * Falls der Parameter "monat" nicht angegeben wird, wird der aktuelle Monat verwendet.
+     * Angezeigt werden alle aktiven Studenten sowie deaktivierte Studenten, die in diesem Monat Erfassungen haben.
+     * Falls der Parameter "monat" nicht angegeben oder leer ist, wird der aktuelle Monat verwendet.
      * Die geladenen Daten werden dem Model hinzugefügt und an die View "anwesenheitsliste" übergeben.
      * </p>
      *
      * @param gruppenId die ID der anzuzeigenden Gruppe
      * @param monat     (optional) der Monat im Format "YYYY-MM", für den die Daten angezeigt werden sollen;
-     *                  falls null wird der aktuelle Monat verwendet
+     *                  falls leer wird der aktuelle Monat verwendet
      * @param model     das Model, in dem die Daten für die View gespeichert werden
      * @return der Name der View "anwesenheitsliste"
      */
@@ -60,16 +63,23 @@ public class ListeController {
 
         // Laden der Gruppe; löst eine Exception aus, falls die Gruppe nicht existiert
         Gruppe gruppe = gruppeService.findOrThrow(gruppenId);
-        // Abrufen der Studenten, die der Gruppe zugeordnet sind
-        List<Studenten> studenten = studentenService.findByGruppeId(gruppe.getId());
         // Ermitteln des Startdatums des Monats:
         // Falls der Parameter "monat" angegeben ist, wird dieser als erster Tag des Monats interpretiert.
-        // Andernfalls wird der erste Tag des aktuellen Monats verwendet.
-        LocalDate monatStart = (monat != null) ? LocalDate.parse(monat + "-01") : LocalDate.now().withDayOfMonth(1);
+        // Andernfalls (auch bei leerem Monatsfeld) wird der erste Tag des aktuellen Monats verwendet.
+        LocalDate monatStart = (monat != null && !monat.isBlank())
+                ? LocalDate.parse(monat.trim() + "-01")
+                : LocalDate.now().withDayOfMonth(1);
         // Ermitteln des Enddatums des Monats
         LocalDate monatEnde = monatStart.withDayOfMonth(monatStart.lengthOfMonth());
         // Abrufen der Anwesenheitsdaten (Erfassungen) für die Gruppe innerhalb des angegebenen Zeitraums
         List<Erfassung> erfassungen = erfassungService.findByGruppeUndMonat(gruppe.getId(), monatStart, monatEnde);
+        // Aktive Studenten sowie deaktivierte Studenten, die in diesem Monat noch Erfassungen haben
+        Set<Integer> studentenMitErfassungen = erfassungen.stream()
+                .map(erfassung -> erfassung.getStudenten().getId())
+                .collect(Collectors.toSet());
+        List<Studenten> studenten = studentenService.findAlleByGruppeIdSortiert(gruppe.getId()).stream()
+                .filter(student -> student.isAktiv() || studentenMitErfassungen.contains(student.getId()))
+                .toList();
         // Hinzufügen der geladenen Daten zum Model, damit sie in der View verfügbar sind
         model.addAttribute("gruppe", gruppe);
         model.addAttribute("studenten", studenten);

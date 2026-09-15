@@ -90,8 +90,8 @@ public class ErfassungController{
     public String showAnwesenheitForm(@PathVariable Integer gruppeId, Model model) {
         // Gruppe anhand der ID laden, wobei findOrThrow() eine Exception wirft, falls die Gruppe nicht vorhanden ist.
         Gruppe gruppe = gruppeService.findOrThrow(gruppeId);
-        // Alle Studenten der Gruppe abrufen.
-        List<Studenten> studentenListe = studentenService.findByGruppeId(gruppeId);
+        // Alle aktiven Studenten der Gruppe abrufen (für deaktivierte Studenten wird nichts mehr erfasst).
+        List<Studenten> studentenListe = studentenService.findAktiveByGruppeId(gruppeId);
         // Status "Anwesend" laden, mit dem jeder Student ohne heutige Erfassung vorbelegt wird.
         Status anwesend = statusService.findAnwesend();
         // Heute bereits gespeicherte Erfassungen der Gruppe, nach Studenten-ID.

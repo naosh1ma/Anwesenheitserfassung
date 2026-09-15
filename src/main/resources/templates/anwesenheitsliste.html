@@ -24,7 +24,8 @@
             <tbody>
             <tr th:each="student : ${studenten}">
                 <td><a class="no-underline" th:href="@{/studenten/{id}(id=${student.id})}"
-                       th:text="${student.vorname} + ' ' + ${student.name}"></a></td>
+                       th:text="${student.vorname} + ' ' + ${student.name}"></a>
+                    <span th:unless="${student.aktiv}" class="inaktiv-hinweis">(deaktiviert)</span></td>
                 <td th:each="tag : ${#numbers.sequence(1, tageImMonat)}">
                     <span th:each="erfassung : ${erfassungen}"
                           th:if="${erfassung.studenten.id == student.id and erfassung.datum?.dayOfMonth == tag}"

@@ -459,6 +459,24 @@ table td {
     box-sizing: border-box;
 }
 
+/* Gruppen- und Studentenverwaltung */
+.inline-form input,
+.inline-form select {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font: inherit;
+}
+
+.inaktiv-hinweis {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+tr.inaktiv td {
+    background-color: #f8f9fa;
+}
+
 .user-info {
     display: flex;
     flex-direction: column;

@@ -137,10 +137,20 @@ Das Datenbankschema wird mit Flyway verwaltet. Die Migrationen liegen in `src/ma
 | V2 | Spalte `benutzer.rolle` (als `VARCHAR`), `benutzer.passwort` mit 255 Zeichen |
 | V3 | Spalten `erfassung.ankunftszeit` und `erfassung.verlassen_um`, Kommentare bis 500 Zeichen |
 | V4 | Status-Werte „Anwesend“, „Entschuldigt“, „Unentschuldigt“ und „Krankmeldung“ |
+| V5 | Spalte `studenten.deaktiviert_am` (leer bedeutet aktiv) |
 
-**Bestehende Datenbanken**: Beim ersten Start mit Flyway wird eine bereits vorhandene Datenbank als Version 1 markiert, danach laufen V2 bis V4. Diese Migrationen prüfen selbst, ob Spalten und Status-Werte schon vorhanden sind. Sie funktionieren daher für ältere Datenbanken ebenso wie für Datenbanken, in denen frühere Versionen die Spalten bereits angelegt haben. Legen Sie vor dem ersten Start trotzdem eine Sicherung an.
+**Bestehende Datenbanken**: Beim ersten Start mit Flyway wird eine bereits vorhandene Datenbank als Version 1 markiert, danach laufen V2 bis V5. Diese Migrationen prüfen selbst, ob Spalten und Status-Werte schon vorhanden sind. Sie funktionieren daher für ältere Datenbanken ebenso wie für Datenbanken, in denen frühere Versionen die Spalten bereits angelegt haben. Legen Sie vor dem ersten Start trotzdem eine Sicherung an.
 
-**Schema ändern**: Änderungen immer als neue Migration anlegen (z. B. `V5__beschreibung.sql`). Bereits ausgeführte Migrationen dürfen nicht nachträglich geändert werden.
+**Schema ändern**: Änderungen immer als neue Migration anlegen (z. B. `V6__beschreibung.sql`). Bereits ausgeführte Migrationen dürfen nicht nachträglich geändert werden.
+
+## Gruppen und Studenten verwalten
+
+Administratoren verwalten Gruppen und Studenten über **Gruppen verwalten** im Menü (`/admin/gruppen`):
+
+- **Gruppen**: anlegen, umbenennen und löschen. Eine Gruppe kann nur gelöscht werden, wenn sie keine Studenten mehr enthält, auch keine deaktivierten.
+- **Studenten**: hinzufügen, Vor- und Nachnamen ändern und in eine andere Gruppe verschieben. Bereits erfasste Anwesenheitsdaten gehören weiterhin zum Studenten und erscheinen danach in der neuen Gruppe.
+- **Deaktivieren**: Studenten, die eine Gruppe verlassen, werden deaktiviert. Sie erscheinen nicht mehr im Erfassungsformular, ihre bisherigen Anwesenheitsdaten bleiben in der Monatsübersicht (dort als „deaktiviert“ markiert) und in der Statistik erhalten. Deaktivierte Studenten können jederzeit reaktiviert werden.
+- **Löschen**: Nur Studenten ohne Anwesenheitsdaten können gelöscht werden, damit keine erfassten Daten verloren gehen.
 
 ## Projektstruktur
 
@@ -225,6 +235,16 @@ SPRING_PROFILES_ACTIVE=prod
 - `POST /admin/benutzer` - Benutzer anlegen
 - `POST /admin/benutzer/{id}/passwort` - Passwort neu setzen
 - `POST /admin/benutzer/{id}/loeschen` - Benutzer löschen
+- `GET /admin/gruppen` - Gruppenverwaltung
+- `POST /admin/gruppen` - Gruppe anlegen
+- `POST /admin/gruppen/{id}/umbenennen` - Gruppe umbenennen
+- `POST /admin/gruppen/{id}/loeschen` - Leere Gruppe löschen
+- `GET /admin/gruppen/{id}` - Studenten einer Gruppe verwalten
+- `POST /admin/gruppen/{id}/studenten` - Student hinzufügen
+- `POST /admin/gruppen/{id}/studenten/{studentId}` - Student bearbeiten oder in eine andere Gruppe verschieben
+- `POST /admin/gruppen/{id}/studenten/{studentId}/deaktivieren` - Student deaktivieren
+- `POST /admin/gruppen/{id}/studenten/{studentId}/reaktivieren` - Student reaktivieren
+- `POST /admin/gruppen/{id}/studenten/{studentId}/loeschen` - Student ohne Anwesenheitsdaten löschen
 
 ## Beitragen
 

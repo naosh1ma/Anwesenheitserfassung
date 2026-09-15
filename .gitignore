@@ -48,6 +48,11 @@ logs/
 *.sqlite
 *.sqlite3
 
+### Docker ###
+# Datenbank-Dumps zum Import in den MariaDB-Container (enthalten personenbezogene Daten)
+docker/initdb/*.sql
+docker/initdb/*.sql.gz
+
 ### OS ###
 .DS_Store
 Thumbs.db

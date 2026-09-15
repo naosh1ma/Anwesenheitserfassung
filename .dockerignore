@@ -1,0 +1,10 @@
+# Nicht in den Build-Kontext kopieren
+target/
+.git/
+.github/
+.idea/
+*.iml
+.vscode/
+# Lokale Passwörter und Datenbank-Dumps gehören nicht ins Image
+.env
+docker/

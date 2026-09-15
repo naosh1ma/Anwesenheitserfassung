@@ -83,6 +83,21 @@ export DB_PASSWORD=your_secure_password
 java -jar target/erfassung-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
 ```
 
+#### Mit Docker starten
+
+Alternativ laufen Anwendung und MariaDB in Containern (Docker Compose oder Podman):
+
+```bash
+cp .env.example .env    # Passwörter in .env anpassen
+docker compose up -d --build
+docker compose logs -f app
+```
+
+- Die Anwendung läuft mit dem `prod`-Profil und ist unter `http://localhost:8080` erreichbar (Port über `APP_PORT` in `.env` änderbar).
+- Beim ersten Start legt Flyway das Schema an und die Anwendung den Administrator aus `ADMIN_USERNAME`/`ADMIN_PASSWORD`.
+- Die Daten liegen im Volume `db-data` und bleiben bei `docker compose down` erhalten. `docker compose down -v` löscht sie.
+- Mit einer Kopie der bisherigen Datenbank starten: siehe `docker/initdb/README.md`.
+
 Die Anwendung ist dann unter `http://localhost:8080` erreichbar.
 
 ## Benutzer und Anmeldung

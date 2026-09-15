@@ -1,0 +1,42 @@
+# Startet die Anwendung zusammen mit einer MariaDB-Datenbank.
+# Vorher .env.example nach .env kopieren und die Passwörter setzen (siehe README, „Mit Docker starten“).
+
+services:
+  db:
+    image: docker.io/library/mariadb:11.8
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: anwesenheit
+      MARIADB_USER: ${DB_USERNAME:-admin_db}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD fehlt in .env}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD fehlt in .env}
+    volumes:
+      - db-data:/var/lib/mysql
+      # Optional: SQL-Dump einer bestehenden Datenbank, wird nur beim allerersten Start eingelesen (siehe docker/initdb/README.md)
+      - ./docker/initdb:/docker-entrypoint-initdb.d:ro,z
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:mariadb://db:3306/anwesenheit
+      DB_USERNAME: ${DB_USERNAME:-admin_db}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD fehlt in .env}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      UNTERRICHTSBEGINN: ${UNTERRICHTSBEGINN:-08:00}
+    ports:
+      - "${APP_PORT:-8080}:8080"
+
+volumes:
+  db-data:

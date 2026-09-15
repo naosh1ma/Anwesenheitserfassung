@@ -1,6 +1,8 @@
 package com.art.erfassung.model;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * Entität zur Repräsentation eines Benutzers.
@@ -31,7 +33,9 @@ public class Benutzer {
     @Column(name = "vorname")
     private String vorname;
 
+    // Als VARCHAR gespeichert (nicht als native ENUM-Spalte), passend zur Flyway-Migration V2
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Column(name = "rolle", length = 20)
     private Rolle rolle;
 

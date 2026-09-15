@@ -32,7 +32,8 @@ public class Erfassung {
     @JoinColumn(name = "status_id", nullable = false)
     private Status status;
 
-    @Column(name = "kommentar")
+    // Bis zu 500 Zeichen, wie im Formular erlaubt (Flyway-Migration V3)
+    @Column(name = "kommentar", length = 500)
     private String kommentar;
 
     // Tatsächliche Ankunftszeit (leer, wenn nicht erfasst)

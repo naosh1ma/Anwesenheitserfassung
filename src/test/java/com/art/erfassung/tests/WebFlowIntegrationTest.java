@@ -12,7 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -75,10 +75,9 @@ public class WebFlowIntegrationTest {
 
     @BeforeEach
     public void setup() {
-        anwesend = statusRepository.save(new Status("Anwesend"));
-        statusRepository.save(new Status("Entschuldigt"));
-        statusRepository.save(new Status("Unentschuldigt"));
-        krankmeldung = statusRepository.save(new Status("Krankmeldung"));
+        // The status values are created by the Flyway migration V4
+        anwesend = statusRepository.findByBezeichnung("Anwesend").orElseThrow();
+        krankmeldung = statusRepository.findByBezeichnung("Krankmeldung").orElseThrow();
         gruppe = gruppeRepository.save(new Gruppe("Testgruppe"));
         student = studentenRepository.save(new Studenten("Mustermann", "Max", gruppe));
     }
@@ -88,7 +87,6 @@ public class WebFlowIntegrationTest {
         erfassungRepository.deleteAll();
         studentenRepository.deleteAll();
         gruppeRepository.deleteAll();
-        statusRepository.deleteAll();
     }
 
     @Test

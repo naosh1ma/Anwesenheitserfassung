@@ -6,10 +6,10 @@ import com.art.erfassung.model.Studenten;
 import com.art.erfassung.repository.GruppeRepository;
 import com.art.erfassung.repository.StatusRepository;
 import com.art.erfassung.repository.StudentenRepository;
+import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ErfassungApplicationIntegrationTest {
 
     @Autowired
-    private TestEntityManager entityManager;
+    private EntityManager entityManager;
 
     @Autowired
     private GruppeRepository gruppeRepository;
@@ -79,26 +79,28 @@ public class ErfassungApplicationIntegrationTest {
     }
 
     @Test
-    public void testStatusRepository_SaveAndFindAll() {
-        // Arrange
-        Status status1 = new Status();
-        status1.setBezeichnung("Anwesend");
+    public void testStatusRepository_MigrationProvidesStatusValues() {
+        // Act
+        List<String> bezeichnungen = statusRepository.findAll().stream().map(Status::getBezeichnung).toList();
 
-        Status status2 = new Status();
-        status2.setBezeichnung("Abwesend");
+        // Assert: the values the application relies on are created exactly once by Flyway
+        assertEquals(4, bezeichnungen.size());
+        assertTrue(bezeichnungen.containsAll(List.of("Anwesend", "Entschuldigt", "Unentschuldigt", "Krankmeldung")));
+    }
+
+    @Test
+    public void testStatusRepository_SaveAndFind() {
+        // Arrange
+        Status status = new Status();
+        status.setBezeichnung("Beurlaubt");
 
         // Act
-        statusRepository.save(status1);
-        statusRepository.save(status2);
+        Status savedStatus = statusRepository.save(status);
         entityManager.flush();
         entityManager.clear();
 
-        List<Status> statuses = statusRepository.findAll();
-
         // Assert
-        assertEquals(2, statuses.size());
-        assertTrue(statuses.stream().anyMatch(s -> s.getBezeichnung().equals("Anwesend")));
-        assertTrue(statuses.stream().anyMatch(s -> s.getBezeichnung().equals("Abwesend")));
+        assertEquals("Beurlaubt", statusRepository.findById(savedStatus.getId()).orElseThrow().getBezeichnung());
     }
 
     @Test

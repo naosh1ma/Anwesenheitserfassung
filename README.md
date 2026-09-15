@@ -12,15 +12,15 @@ Ein Spring Boot Web-Anwendung zur Verwaltung von Studentenanwesenheit in Bildung
 
 ## Technologie-Stack
 
-- **Backend**: Spring Boot 3.4.3, Java 23
-- **Datenbank**: MariaDB (Produktion), H2 (Tests)
+- **Backend**: Spring Boot 4.1, Java 25
+- **Datenbank**: MariaDB (Produktion), H2 (Tests), Schema-Verwaltung mit Flyway
 - **Frontend**: Thymeleaf Templates, CSS
 - **Sicherheit**: Spring Security
 - **Build Tool**: Maven
 
 ## Voraussetzungen
 
-- Java 23 oder höher
+- Java 25 oder höher
 - Maven 3.6+
 - MariaDB (für Produktion)
 - Git
@@ -109,13 +109,7 @@ Administratoren verwalten Benutzer über **Benutzer** im Menü (`/admin/benutzer
 ### Bestehende Benutzer aus früheren Versionen
 Frühere Versionen haben Passwörter im Klartext gespeichert. Beim Start werden solche Passwörter automatisch gehasht, Benutzer ohne Rolle werden Lehrer. Die Anmeldedaten bleiben gleich.
 
-Die Spalte `benutzer.passwort` muss mindestens 60 Zeichen aufnehmen können. Im `dev`-Profil wird die neue Spalte `rolle` automatisch angelegt. Im `prod`-Profil (Schema-Validierung) führen Sie vor dem Start aus:
-
-```sql
-ALTER TABLE benutzer ADD COLUMN rolle VARCHAR(20);
--- nur falls die Spalte kürzer ist:
-ALTER TABLE benutzer MODIFY passwort VARCHAR(255);
-```
+Die Spalte `rolle` und ausreichend Platz für die Passwort-Hashes werden beim Start automatisch durch die Datenbank-Migrationen angelegt (siehe „Datenbank-Migrationen“).
 
 ## Anwesenheitserfassung
 
@@ -131,12 +125,22 @@ export UNTERRICHTSBEGINN=08:30
 
 Ältere Erfassungen ohne gespeicherte Ankunftszeit zählen weiterhin als Verspätung, wenn ihr Kommentar „Verspätung“ enthält, da Verspätungen früher nur im Kommentar vermerkt wurden.
 
-Im `dev`-Profil werden die neuen Spalten automatisch angelegt. Im `prod`-Profil (Schema-Validierung) führen Sie vor dem Start aus:
+Die Spalten werden beim Start automatisch durch die Datenbank-Migrationen angelegt (siehe unten).
 
-```sql
-ALTER TABLE erfassung ADD COLUMN ankunftszeit TIME;
-ALTER TABLE erfassung ADD COLUMN verlassen_um TIME;
-```
+## Datenbank-Migrationen (Flyway)
+
+Das Datenbankschema wird mit Flyway verwaltet. Die Migrationen liegen in `src/main/resources/db/migration` und werden beim Start der Anwendung in jedem Profil automatisch ausgeführt. Hibernate prüft nur noch, ob die Entitäten zum Schema passen (`ddl-auto=validate`). Die Tests führen dieselben Migrationen auf H2 im MariaDB-Kompatibilitätsmodus aus.
+
+| Version | Inhalt |
+|---|---|
+| V1 | Ausgangsschema (Tabellen `gruppe`, `studenten`, `status`, `erfassung`, `benutzer`) |
+| V2 | Spalte `benutzer.rolle` (als `VARCHAR`), `benutzer.passwort` mit 255 Zeichen |
+| V3 | Spalten `erfassung.ankunftszeit` und `erfassung.verlassen_um`, Kommentare bis 500 Zeichen |
+| V4 | Status-Werte „Anwesend“, „Entschuldigt“, „Unentschuldigt“ und „Krankmeldung“ |
+
+**Bestehende Datenbanken**: Beim ersten Start mit Flyway wird eine bereits vorhandene Datenbank als Version 1 markiert, danach laufen V2 bis V4. Diese Migrationen prüfen selbst, ob Spalten und Status-Werte schon vorhanden sind. Sie funktionieren daher für ältere Datenbanken ebenso wie für Datenbanken, in denen frühere Versionen die Spalten bereits angelegt haben. Legen Sie vor dem ersten Start trotzdem eine Sicherung an.
+
+**Schema ändern**: Änderungen immer als neue Migration anlegen (z. B. `V5__beschreibung.sql`). Bereits ausgeführte Migrationen dürfen nicht nachträglich geändert werden.
 
 ## Projektstruktur
 

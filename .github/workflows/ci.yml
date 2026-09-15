@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '23'
+          java-version: '25'
           cache: maven
 
       # Tests use the H2 in-memory database of the test profile, so no database service is needed

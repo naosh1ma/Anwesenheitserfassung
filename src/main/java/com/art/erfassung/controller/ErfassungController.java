@@ -11,6 +11,7 @@ import com.art.erfassung.service.GruppeService;
 import com.art.erfassung.service.StatusService;
 import com.art.erfassung.service.StudentenService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -54,14 +55,20 @@ public class ErfassungController{
     // Service zur Verwaltung der Gruppen
     private final GruppeService gruppeService;
 
+    // Unterrichtsbeginn (HH:mm), ab dem das Formular eine Ankunftszeit als Verspätung anzeigt
+    private final String unterrichtsbeginn;
+
     private static final Logger logger = LoggerFactory.getLogger(ErfassungController.class);
 
     public ErfassungController(StudentenService studentenService, ErfassungService erfassungService,
-                               StatusService statusService, GruppeService gruppeService) {
+                               StatusService statusService, GruppeService gruppeService,
+                               @Value("${app.unterricht.beginn:08:00}") String unterrichtsbeginn) {
         this.studentenService = studentenService;
         this.erfassungService = erfassungService;
         this.statusService = statusService;
         this.gruppeService = gruppeService;
+        this.unterrichtsbeginn = LocalTime.parse(unterrichtsbeginn.trim(), DateTimeFormatter.ofPattern("H:mm"))
+                .format(ZEIT_FORMAT);
     }
 
     /**
@@ -146,6 +153,7 @@ public class ErfassungController{
         model.addAttribute("gruppe", gruppe);
         model.addAttribute("statusListe", statusService.findAll());
         model.addAttribute("anwesendStatusId", anwesend.getId());
+        model.addAttribute("unterrichtsbeginn", unterrichtsbeginn);
     }
 
     /**

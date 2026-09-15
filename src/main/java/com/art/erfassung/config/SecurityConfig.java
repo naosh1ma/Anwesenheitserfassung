@@ -32,7 +32,7 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(authz -> authz
                 // Public endpoints
-                .requestMatchers("/", "/login", "/error", "/css/**", "/images/**", "/js/**").permitAll()
+                .requestMatchers("/", "/login", "/error", "/css/**", "/fonts/**", "/images/**", "/js/**").permitAll()
                 // User management: admins only
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 // Attendance and statistics: teachers and admins

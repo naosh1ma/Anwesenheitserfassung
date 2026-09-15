@@ -55,7 +55,6 @@ public class GruppenVerwaltungController {
         model.addAttribute("gruppen", gruppen);
         model.addAttribute("aktiveStudenten", aktiveStudenten);
         model.addAttribute("deaktivierteStudenten", deaktivierteStudenten);
-        model.addAttribute("pageTitle", "Gruppen verwalten");
         return "admin-gruppen";
     }
 
@@ -115,7 +114,6 @@ public class GruppenVerwaltungController {
         model.addAttribute("gruppe", gruppeService.findOrThrow(id));
         model.addAttribute("studenten", studentenService.findAlleByGruppeIdSortiert(id));
         model.addAttribute("alleGruppen", gruppeService.findAll());
-        model.addAttribute("pageTitle", "Studenten verwalten");
         return "admin-studenten";
     }
 

@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${pageTitle} + ' - Erfassung'">Erfassung</title>
+    <title layout:title-pattern="$CONTENT_TITLE – Anwesenheitserfassung">Anwesenheitserfassung</title>
     <link rel="stylesheet" th:href="@{/css/styles.css}">
     <link rel="icon" th:href="@{/images/logo.png}" type="image/png">
 
@@ -12,86 +12,45 @@
     <th:block layout:fragment="head"></th:block>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="navbar-container">
-            <div class="logo">
-                <a th:href="@{/willkommen}" class="navbar-logo">
-                    <img th:src="@{/images/logo.png}" alt="Erfassung Logo"/>
-                    <span class="logo-text">Erfassung</span>
+    <header class="app-header">
+        <div class="app-header__inner">
+            <div class="app-header__left">
+                <a th:href="@{/gruppen}" class="brand" aria-label="Anwesenheitserfassung, zur Gruppenübersicht">
+                    <svg th:replace="~{fragments/icons :: brand}"></svg>
+                    <span class="brand__text">Anwesenheitserfassung</span>
                 </a>
+                <nav class="nav" aria-label="Hauptnavigation">
+                    <a th:href="@{/gruppen}" class="nav__link"
+                       th:classappend="${aktiveNavigation == 'gruppen'} ? 'is-active'">Gruppen</a>
+                    <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" th:href="@{/admin/gruppen}" class="nav__link"
+                       th:classappend="${aktiveNavigation == 'verwaltung'} ? 'is-active'">Gruppen verwalten</a>
+                    <a th:if="${#authorization.expression('hasRole(''ADMIN'')')}" th:href="@{/admin/benutzer}" class="nav__link"
+                       th:classappend="${aktiveNavigation == 'benutzer'} ? 'is-active'">Benutzer</a>
+                </nav>
             </div>
-            <ul class="menu">
-                <li><a th:href="@{/willkommen}" class="nav-link">
-                    <span class="icon">🏠</span> Startseite
-                </a></li>
-                <li><a th:href="@{/gruppen}" class="nav-link">
-                    <span class="icon">📚</span> Gruppen
-                </a></li>
-                <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}"><a th:href="@{/admin/gruppen}" class="nav-link">
-                    <span class="icon">🗂️</span> Gruppen verwalten
-                </a></li>
-                <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}"><a th:href="@{/admin/benutzer}" class="nav-link">
-                    <span class="icon">👥</span> Benutzer
-                </a></li>
-                <li>
-                    <form th:action="@{/logout}" method="post" class="logout-form">
-                        <button type="submit" class="nav-link logout">
-                            <span class="icon">🚪</span> Abmelden
-                        </button>
-                    </form>
-                </li>
-            </ul>
-            <div class="user-info">
-                <span class="user-name" th:text="${#authentication.name}">Benutzer</span>
-                <span class="user-role" th:if="${#authentication.authorities}">
-                    <span th:each="authority : ${#authentication.authorities}"
-                          th:text="${authority.authority == 'ROLE_ADMIN' ? 'Administrator' : 'Lehrer'}"></span>
-                </span>
+            <div class="user">
+                <div class="user__meta">
+                    <span class="user__name" th:text="${#authentication.name}">Benutzer</span>
+                    <span class="user__role"
+                          th:text="${#authorization.expression('hasRole(''ADMIN'')')} ? 'Administrator' : 'Lehrer'">Lehrer</span>
+                </div>
+                <form th:action="@{/logout}" method="post" class="inline-form">
+                    <button type="submit" class="btn btn--secondary" aria-label="Abmelden">
+                        <svg th:replace="~{fragments/icons :: logout}"></svg>
+                        <span class="btn__text">Abmelden</span>
+                    </button>
+                </form>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="container">
-            <!-- Success/Error Messages -->
-            <div th:replace="~{fragments/messages :: all-messages}"></div>
+    <main class="page">
+        <!-- Erfolgs- und Fehlermeldungen -->
+        <div th:replace="~{fragments/messages :: all-messages}"></div>
 
-            <!-- Page Content (each page renders its own heading) -->
-            <div class="page-content">
-                <th:block layout:fragment="content">
-                    <!-- Page content goes here -->
-                </th:block>
-            </div>
-        </div>
+        <!-- Seiteninhalt (jede Seite rendert ihre eigene Überschrift) -->
+        <th:block layout:fragment="content"></th:block>
     </main>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Erfassung System</h4>
-                    <p>Anwesenheitserfassung für Bildungseinrichtungen</p>
-                </div>
-                <div class="footer-section">
-                    <h4>Navigation</h4>
-                    <ul>
-                        <li><a th:href="@{/willkommen}">Startseite</a></li>
-                        <li><a th:href="@{/gruppen}">Gruppen</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>Support</h4>
-                    <p>Bei Fragen wenden Sie sich an den Administrator</p>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2024 Erfassung System. Alle Rechte vorbehalten.</p>
-            </div>
-        </div>
-    </footer>
 
     <!-- Additional scripts -->
     <th:block layout:fragment="scripts"></th:block>

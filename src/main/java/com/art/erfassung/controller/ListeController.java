@@ -10,16 +10,18 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Controller zur Anzeige und Aktualisierung der Anwesenheitslisten.
+ * Controller zur Anzeige der Anwesenheitslisten.
  * <p>
  * Alle Methoden in dieser Klasse verarbeiten Anfragen, die mit "/liste" beginnen.
- * Der Controller ermöglicht das Anzeigen der Anwesenheitsdaten einer Gruppe sowie das
- * Aktualisieren einzelner Anwesenheitseinträge.
+ * Der Controller zeigt die Anwesenheitsdaten einer Gruppe für einen Monat an.
  * </p>
  */
 @Controller
@@ -47,12 +49,10 @@ public class ListeController {
      * Es werden die Gruppe, ihre Studenten sowie die Anwesenheitsdaten innerhalb eines bestimmten Monats geladen.
      * Angezeigt werden alle aktiven Studenten sowie deaktivierte Studenten, die in diesem Monat Erfassungen haben.
      * Falls der Parameter "monat" nicht angegeben oder leer ist, wird der aktuelle Monat verwendet.
-     * Die geladenen Daten werden dem Model hinzugefügt und an die View "anwesenheitsliste" übergeben.
      * </p>
      *
      * @param gruppenId die ID der anzuzeigenden Gruppe
-     * @param monat     (optional) der Monat im Format "YYYY-MM", für den die Daten angezeigt werden sollen;
-     *                  falls leer wird der aktuelle Monat verwendet
+     * @param monat     (optional) der Monat im Format "YYYY-MM"; falls leer wird der aktuelle Monat verwendet
      * @param model     das Model, in dem die Daten für die View gespeichert werden
      * @return der Name der View "anwesenheitsliste"
      */
@@ -63,15 +63,13 @@ public class ListeController {
 
         // Laden der Gruppe; löst eine Exception aus, falls die Gruppe nicht existiert
         Gruppe gruppe = gruppeService.findOrThrow(gruppenId);
-        // Ermitteln des Startdatums des Monats:
-        // Falls der Parameter "monat" angegeben ist, wird dieser als erster Tag des Monats interpretiert.
-        // Andernfalls (auch bei leerem Monatsfeld) wird der erste Tag des aktuellen Monats verwendet.
-        LocalDate monatStart = (monat != null && !monat.isBlank())
-                ? LocalDate.parse(monat.trim() + "-01")
-                : LocalDate.now().withDayOfMonth(1);
-        // Ermitteln des Enddatums des Monats
-        LocalDate monatEnde = monatStart.withDayOfMonth(monatStart.lengthOfMonth());
-        // Abrufen der Anwesenheitsdaten (Erfassungen) für die Gruppe innerhalb des angegebenen Zeitraums
+        // Ermitteln des Monats: angegebener Monat oder (auch bei leerem Monatsfeld) der aktuelle Monat
+        YearMonth anzeigeMonat = (monat != null && !monat.isBlank())
+                ? YearMonth.parse(monat.trim())
+                : YearMonth.now();
+        LocalDate monatStart = anzeigeMonat.atDay(1);
+        LocalDate monatEnde = anzeigeMonat.atEndOfMonth();
+        // Abrufen der Anwesenheitsdaten (Erfassungen) für die Gruppe innerhalb des Monats
         List<Erfassung> erfassungen = erfassungService.findByGruppeUndMonat(gruppe.getId(), monatStart, monatEnde);
         // Aktive Studenten sowie deaktivierte Studenten, die in diesem Monat noch Erfassungen haben
         Set<Integer> studentenMitErfassungen = erfassungen.stream()
@@ -80,14 +78,28 @@ public class ListeController {
         List<Studenten> studenten = studentenService.findAlleByGruppeIdSortiert(gruppe.getId()).stream()
                 .filter(student -> student.isAktiv() || studentenMitErfassungen.contains(student.getId()))
                 .toList();
+        // Erfassungen je Student und Tag des Monats, damit das Template jede Zelle direkt nachschlagen kann
+        Map<Integer, Map<Integer, Erfassung>> zellen = new HashMap<>();
+        for (Studenten student : studenten) {
+            zellen.put(student.getId(), new HashMap<>());
+        }
+        for (Erfassung erfassung : erfassungen) {
+            Map<Integer, Erfassung> tageDesStudenten = zellen.get(erfassung.getStudenten().getId());
+            if (tageDesStudenten != null) {
+                tageDesStudenten.putIfAbsent(erfassung.getDatum().getDayOfMonth(), erfassung);
+            }
+        }
         // Hinzufügen der geladenen Daten zum Model, damit sie in der View verfügbar sind
         model.addAttribute("gruppe", gruppe);
         model.addAttribute("studenten", studenten);
-        model.addAttribute("erfassungen", erfassungen);
-        // Formatierter Monat (YYYY-MM)
-        model.addAttribute("monat", monatStart.toString().substring(0, 7));
-        // Anzahl der Tage im Monat
-        model.addAttribute("tageImMonat", monatStart.lengthOfMonth());
+        model.addAttribute("zellen", zellen);
+        model.addAttribute("tage", monatStart.datesUntil(monatEnde.plusDays(1)).toList());
+        model.addAttribute("heute", LocalDate.now());
+        model.addAttribute("monatStart", monatStart);
+        // Formatierter Monat (YYYY-MM) sowie Vor- und Folgemonat für die Monatsnavigation
+        model.addAttribute("monat", anzeigeMonat.toString());
+        model.addAttribute("vorherigerMonat", anzeigeMonat.minusMonths(1).toString());
+        model.addAttribute("naechsterMonat", anzeigeMonat.plusMonths(1).toString());
         // Rückgabe des View-Namens "anwesenheitsliste"
         return "anwesenheitsliste";
     }

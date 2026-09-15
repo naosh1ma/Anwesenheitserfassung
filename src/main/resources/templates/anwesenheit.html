@@ -3,115 +3,170 @@
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}">
 <head>
-    <title>Anwesenheitserfassung</title>
-    <style>
-        /* Grundlegende Stile für die Toggle-Bereiche */
-        .toggle-button {
-            margin-left: 10px;
-            padding: 5px 10px;
-        }
-
-        .radio-group {
-            margin-bottom: 5px;
-        }
-    </style>
+    <title>Anwesenheit erfassen</title>
 </head>
 <body>
-<div layout:fragment="content">
-    <h2>
-        Anwesenheitserfassung für Gruppe: <span th:text="${gruppe.bezeichnung}"></span>
-    </h2>
-    <p>Heutiges Datum: <span th:text="${#dates.format(#dates.createNow(), 'dd.MM.yyyy')}"></span></p>
+<div layout:fragment="content" class="stack">
+    <div class="page-head">
+        <div class="page-head__main">
+            <nav class="breadcrumb" aria-label="Pfad">
+                <a th:href="@{/gruppen}">Gruppen</a>
+                <span class="breadcrumb__sep">/</span>
+                <span th:text="${gruppe.bezeichnung}">Gruppe</span>
+            </nav>
+            <h1 class="page-head__title">Anwesenheit erfassen</h1>
+            <div class="meta">
+                <span th:text="${#temporals.format(#temporals.createToday(), 'EEEE, d. MMMM yyyy')}">Datum</span>
+                <span class="meta__item">
+                    <svg th:replace="~{fragments/icons :: clock}"></svg>
+                    <span th:text="|Unterrichtsbeginn ${unterrichtsbeginn}|">Unterrichtsbeginn</span>
+                </span>
+            </div>
+        </div>
+        <a th:href="@{/liste/{id}(id=${gruppe.id})}" class="btn btn--secondary">
+            <svg th:replace="~{fragments/icons :: calendar}"></svg>
+            <span>Monatsübersicht</span>
+        </a>
+    </div>
 
     <!-- Formularbindung an anwesenheitForm -->
-    <form th:action="@{/anwesenheit/{id}/speichern(id=${gruppe.id})}" th:object="${anwesenheitForm}" method="post">
-        <table class="table table-bordered">
-            <thead>
-            <tr>
-                <th>Student</th>
-                <th>Status</th>
-                <th>Ankunftszeit</th>
-                <th>Verlassen um</th>
-                <th>Kommentar</th>
-            </tr>
-            </thead>
-            <tbody>
+    <form th:action="@{/anwesenheit/{id}/speichern(id=${gruppe.id})}" th:object="${anwesenheitForm}" method="post"
+          class="card" id="erfassung-form" th:attr="data-unterrichtsbeginn=${unterrichtsbeginn}">
+        <div class="card__head">
+            <span class="card__title"
+                  th:with="anzahl=${#lists.size(anwesenheitForm.eintraege)}"
+                  th:text="${anzahl == 1} ? '1 Student' : |${anzahl} Studenten|">Studenten</span>
+            <div class="summary" data-summary hidden>
+                <span class="summary__item"><span class="dot dot--present"></span><span data-count-present>0</span> anwesend</span>
+                <span class="summary__item"><span class="dot dot--absent"></span><span data-count-absent>0</span> abwesend</span>
+            </div>
+        </div>
+
+        <div class="empty" th:if="${#lists.isEmpty(anwesenheitForm.eintraege)}">
+            <p class="muted">Diese Gruppe hat keine aktiven Studenten.</p>
+        </div>
+
+        <th:block th:unless="${#lists.isEmpty(anwesenheitForm.eintraege)}">
+            <div class="att-head" aria-hidden="true">
+                <span>Student</span>
+                <span>Status</span>
+                <span>Ankunft</span>
+                <span>Verlassen</span>
+                <span>Kommentar</span>
+            </div>
+
             <!-- Iteriere über die Liste von "eintraege" -->
-            <tr th:each="eintrag, iter : *{eintraege}">
-                <td>
+            <div class="att-row" th:each="eintrag, iter : *{eintraege}">
+                <div class="att-name">
                     <!-- Bindung für Studenten-ID und Anzeige des Studentennamens -->
                     <input type="hidden" th:field="*{eintraege[__${iter.index}__].studentenId}"/>
-                    <span th:text="*{eintraege[__${iter.index}__].studentenName}">Student Name</span>
-                </td>
-                <td th:with="abwesend=${eintrag.statusId != anwesendStatusId}">
-                    <!-- Standardbereich: "Anwesend" (vorausgewählt) und Button zur Auswahl eines Abwesenheitsgrunds -->
-                    <div th:id="|statusDefault_${iter.index}|" th:style="${abwesend} ? 'display: none;'">
-                        <div class="radio-group">
-                            <input type="radio"
-                                   th:field="*{eintraege[__${iter.index}__].statusId}"
-                                   th:id="|anwesend_${iter.index}|"
-                                   th:value="${anwesendStatusId}"/>
-                            <label th:for="|anwesend_${iter.index}|">Anwesend</label>
-                        </div>
-                        <div class="radio-group">
-                            <button type="button" class="toggle-button" th:onclick="|showDetailed(${iter.index})|">
-                                Abwesend
-                            </button>
-                        </div>
-                    </div>
+                    <span th:text="*{eintraege[__${iter.index}__].studentenName}">Student</span>
+                </div>
 
-                    <!-- Detaillierter Bereich: alle übrigen Status als Abwesenheitsgründe -->
-                    <div th:id="|statusDetailed_${iter.index}|" th:style="${abwesend} ? '' : 'display: none;'">
-                        <div class="radio-group" th:each="status : ${statusListe}" th:unless="${status.id == anwesendStatusId}">
-                            <input type="radio"
-                                   th:field="*{eintraege[__${iter.index}__].statusId}"
-                                   th:id="|status_${iter.index}_${status.id}|"
-                                   th:value="${status.id}"/>
-                            <label th:for="|status_${iter.index}_${status.id}|" th:text="${status.bezeichnung}">Status</label>
-                        </div>
-                        <!-- Button, um zurück zum Standardbereich zu wechseln -->
-                        <div class="radio-group">
-                            <button type="button" class="toggle-button" th:onclick="|hideDetailed(${iter.index})|">
-                                Zurück
-                            </button>
-                        </div>
+                <!-- Status: ein Umschalter mit "Anwesend" und allen Abwesenheitsgründen -->
+                <div class="status-switch" role="radiogroup"
+                     th:attr="aria-label=|Status für ${eintrag.studentenName}|"
+                     th:classappend="${eintrag.statusId == null} ? 'status-switch--missing'">
+                    <div class="status-switch__option">
+                        <input type="radio"
+                               th:field="*{eintraege[__${iter.index}__].statusId}"
+                               th:id="|anwesend_${iter.index}|"
+                               th:value="${anwesendStatusId}"
+                               data-present="true"/>
+                        <label th:for="|anwesend_${iter.index}|" class="status--anwesend">Anwesend</label>
                     </div>
-                </td>
-                <td>
-                    <input type="time" class="form-control" th:field="*{eintraege[__${iter.index}__].ankunftszeit}"/>
-                </td>
-                <td>
-                    <input type="time" class="form-control" th:field="*{eintraege[__${iter.index}__].verlassenUm}"/>
-                </td>
-                <td>
-                    <input type="text" class="form-control" th:field="*{eintraege[__${iter.index}__].kommentar}"
-                           placeholder="Kommentar (optional)"/>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-        <button type="submit" class="btn btn-success">Speichern</button>
+                    <div class="status-switch__option" th:each="status : ${statusListe}" th:unless="${status.id == anwesendStatusId}">
+                        <input type="radio"
+                               th:field="*{eintraege[__${iter.index}__].statusId}"
+                               th:id="|status_${iter.index}_${status.id}|"
+                               th:value="${status.id}"/>
+                        <label th:for="|status_${iter.index}_${status.id}|"
+                               th:classappend="|status--${#strings.toLowerCase(status.bezeichnung)}|"
+                               th:text="${status.bezeichnung}">Status</label>
+                    </div>
+                </div>
+
+                <div class="att-field att-field--arrival">
+                    <label class="att-label" th:for="|eintraege${iter.index}.ankunftszeit|">Ankunft</label>
+                    <input type="time" class="input" th:field="*{eintraege[__${iter.index}__].ankunftszeit}" data-arrival/>
+                    <span class="late" data-late hidden></span>
+                </div>
+                <div class="att-field att-field--leave">
+                    <label class="att-label" th:for="|eintraege${iter.index}.verlassenUm|">Verlassen</label>
+                    <input type="time" class="input" th:field="*{eintraege[__${iter.index}__].verlassenUm}"/>
+                </div>
+                <div class="att-field att-field--comment">
+                    <label class="att-label" th:for="|eintraege${iter.index}.kommentar|">Kommentar</label>
+                    <input type="text" class="input" th:field="*{eintraege[__${iter.index}__].kommentar}"
+                           placeholder="Kommentar (optional)" maxlength="500"/>
+                </div>
+            </div>
+
+            <div class="card__foot card__foot--sticky">
+                <a th:href="@{/gruppen}" class="btn btn--secondary btn--lg">Abbrechen</a>
+                <button type="submit" class="btn btn--primary btn--lg">Speichern</button>
+            </div>
+        </th:block>
     </form>
-    <a th:href="@{/liste/{id}(id=${gruppe.id})}" class="btn btn-secondary mt-3">Übersicht anzeigen</a>
-    <a th:href="@{/gruppen}" class="btn btn-primary mt-3">Zurück zur Gruppenübersicht</a>
 </div>
 
-<!-- JavaScript zur Umschaltung -->
+<!-- Zählt anwesende und abwesende Studenten und zeigt Verspätungen direkt beim Eintippen an -->
 <th:block layout:fragment="scripts">
-    <script type="text/javascript">
-        // Blendet die Abwesenheitsgründe ein. "Anwesend" wird abgewählt, damit ein Grund gewählt werden muss.
-        function showDetailed(index) {
-            document.getElementById("statusDefault_" + index).style.display = "none";
-            document.getElementById("statusDetailed_" + index).style.display = "block";
-            document.getElementById("anwesend_" + index).checked = false;
-        }
+    <script>
+        (function () {
+            var form = document.getElementById('erfassung-form');
+            if (!form) {
+                return;
+            }
+            var beginn = form.getAttribute('data-unterrichtsbeginn') || '08:00';
 
-        // Kehrt zum Standardbereich zurück und wählt wieder "Anwesend" aus.
-        function hideDetailed(index) {
-            document.getElementById("statusDetailed_" + index).style.display = "none";
-            document.getElementById("statusDefault_" + index).style.display = "block";
-            document.getElementById("anwesend_" + index).checked = true;
-        }
+            function minuten(wert) {
+                var teile = /^(\d{1,2}):(\d{2})/.exec(wert || '');
+                return teile ? parseInt(teile[1], 10) * 60 + parseInt(teile[2], 10) : null;
+            }
+
+            function verspaetungAnzeigen(eingabe) {
+                var hinweis = eingabe.parentElement.querySelector('[data-late]');
+                var ankunft = minuten(eingabe.value);
+                var differenz = ankunft === null ? 0 : ankunft - minuten(beginn);
+                if (differenz > 0) {
+                    hinweis.textContent = differenz + ' Min. verspätet';
+                    hinweis.hidden = false;
+                } else {
+                    hinweis.hidden = true;
+                }
+            }
+
+            function zusammenfassungAktualisieren() {
+                var anwesend = 0;
+                var abwesend = 0;
+                form.querySelectorAll('.status-switch').forEach(function (umschalter) {
+                    var gewaehlt = umschalter.querySelector('input:checked');
+                    if (!gewaehlt) {
+                        return;
+                    }
+                    umschalter.classList.remove('status-switch--missing');
+                    if (gewaehlt.hasAttribute('data-present')) {
+                        anwesend++;
+                    } else {
+                        abwesend++;
+                    }
+                });
+                var zusammenfassung = form.querySelector('[data-summary]');
+                zusammenfassung.querySelector('[data-count-present]').textContent = anwesend;
+                zusammenfassung.querySelector('[data-count-absent]').textContent = abwesend;
+                zusammenfassung.hidden = false;
+            }
+
+            form.querySelectorAll('[data-arrival]').forEach(function (eingabe) {
+                verspaetungAnzeigen(eingabe);
+                eingabe.addEventListener('input', function () {
+                    verspaetungAnzeigen(eingabe);
+                });
+            });
+            form.addEventListener('change', zusammenfassungAktualisieren);
+            zusammenfassungAktualisieren();
+        })();
     </script>
 </th:block>
 </body>

@@ -3,40 +3,32 @@
 <body>
 
 <!-- Success Messages -->
-<div th:fragment="success-message" th:if="${successMessage}" class="alert alert-success">
-    <div class="alert-content">
-        <span class="alert-icon">✅</span>
-        <span th:text="${successMessage}"></span>
-    </div>
+<div th:fragment="success-message" th:if="${successMessage}" class="alert alert--success" role="status">
+    <svg th:replace="~{fragments/icons :: check-circle}"></svg>
+    <span th:text="${successMessage}"></span>
 </div>
 
 <!-- Error Messages (optional mit einer Liste von Details, z. B. Validierungsfehler) -->
-<div th:fragment="error-message" th:if="${errorMessage}" class="alert alert-error">
-    <div class="alert-content">
-        <span class="alert-icon">❌</span>
-        <div>
-            <span th:text="${errorMessage}"></span>
-            <ul th:if="${errorDetails}" class="alert-details">
-                <li th:each="detail : ${errorDetails}" th:text="${detail}"></li>
-            </ul>
-        </div>
+<div th:fragment="error-message" th:if="${errorMessage}" class="alert alert--error" role="alert">
+    <svg th:replace="~{fragments/icons :: alert-circle}"></svg>
+    <div>
+        <span th:text="${errorMessage}"></span>
+        <ul th:if="${errorDetails}" class="alert__details">
+            <li th:each="detail : ${errorDetails}" th:text="${detail}"></li>
+        </ul>
     </div>
 </div>
 
 <!-- Info Messages -->
-<div th:fragment="info-message" th:if="${infoMessage}" class="alert alert-info">
-    <div class="alert-content">
-        <span class="alert-icon">ℹ️</span>
-        <span th:text="${infoMessage}"></span>
-    </div>
+<div th:fragment="info-message" th:if="${infoMessage}" class="alert alert--info" role="status">
+    <svg th:replace="~{fragments/icons :: info}"></svg>
+    <span th:text="${infoMessage}"></span>
 </div>
 
 <!-- Warning Messages -->
-<div th:fragment="warning-message" th:if="${warningMessage}" class="alert alert-warning">
-    <div class="alert-content">
-        <span class="alert-icon">⚠️</span>
-        <span th:text="${warningMessage}"></span>
-    </div>
+<div th:fragment="warning-message" th:if="${warningMessage}" class="alert alert--warning" role="status">
+    <svg th:replace="~{fragments/icons :: alert-circle}"></svg>
+    <span th:text="${warningMessage}"></span>
 </div>
 
 <!-- All Messages Combined -->

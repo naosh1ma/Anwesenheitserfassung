@@ -178,7 +178,7 @@ public class GruppenVerwaltungIntegrationTest {
         mockMvc.perform(get("/liste/{id}", gruppe.getId()).with(teacher()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Max Mustermann")))
-                .andExpect(content().string(containsString("(deaktiviert)")));
+                .andExpect(content().string(containsString("class=\"inaktiv-hinweis\">deaktiviert<")));
 
         // Assert: attendance can no longer be saved for the student
         mockMvc.perform(post("/anwesenheit/{id}/speichern", gruppe.getId()).with(teacher()).with(csrf())

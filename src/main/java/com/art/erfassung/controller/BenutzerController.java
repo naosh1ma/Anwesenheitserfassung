@@ -123,7 +123,6 @@ public class BenutzerController {
     private String zeigeSeite(Model model) {
         model.addAttribute("benutzerListe", benutzerService.findAll());
         model.addAttribute("rollen", Rolle.values());
-        model.addAttribute("pageTitle", "Benutzerverwaltung");
         return "benutzer";
     }
 }

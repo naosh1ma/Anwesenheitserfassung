@@ -6,77 +6,95 @@
     <title>Studenten verwalten</title>
 </head>
 <body>
-<div layout:fragment="content">
-    <h2>Studenten der Gruppe <span th:text="${gruppe.bezeichnung}">Gruppe</span></h2>
-    <p><a th:href="@{/admin/gruppen}">← Zurück zu „Gruppen verwalten“</a></p>
-
-    <p th:if="${studenten.empty}">Diese Gruppe hat noch keine Studenten.</p>
-
-    <div class="table-scroll" th:unless="${studenten.empty}">
-        <table class="table table-bordered">
-            <thead>
-            <tr>
-                <th>Vorname, Nachname und Gruppe</th>
-                <th>Status</th>
-                <th>Aktionen</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="student : ${studenten}" th:classappend="${student.aktiv} ? '' : 'inaktiv'">
-                <td>
-                    <form th:action="@{/admin/gruppen/{gid}/studenten/{sid}(gid=${gruppe.id},sid=${student.id})}"
-                          method="post" class="inline-form">
-                        <input type="text" name="vorname" required th:value="${student.vorname}" aria-label="Vorname">
-                        <input type="text" name="name" required th:value="${student.name}" aria-label="Nachname">
-                        <select name="gruppeId" aria-label="Gruppe">
-                            <option th:each="g : ${alleGruppen}" th:value="${g.id}" th:text="${g.bezeichnung}"
-                                    th:selected="${g.id == gruppe.id}">Gruppe</option>
-                        </select>
-                        <button type="submit" class="btn btn-secondary">Speichern</button>
-                    </form>
-                </td>
-                <td>
-                    <span th:if="${student.aktiv}">Aktiv</span>
-                    <span th:unless="${student.aktiv}" class="inaktiv-hinweis"
-                          th:text="|Deaktiviert seit ${#temporals.format(student.deaktiviertAm, 'dd.MM.yyyy')}|">Deaktiviert</span>
-                </td>
-                <td>
-                    <div class="inline-form">
-                        <form th:if="${student.aktiv}"
-                              th:action="@{/admin/gruppen/{gid}/studenten/{sid}/deaktivieren(gid=${gruppe.id},sid=${student.id})}"
-                              method="post">
-                            <button type="submit" class="btn btn-secondary">Deaktivieren</button>
-                        </form>
-                        <form th:unless="${student.aktiv}"
-                              th:action="@{/admin/gruppen/{gid}/studenten/{sid}/reaktivieren(gid=${gruppe.id},sid=${student.id})}"
-                              method="post">
-                            <button type="submit" class="btn btn-secondary">Reaktivieren</button>
-                        </form>
-                        <!-- Löschen ist nur möglich, solange keine Anwesenheitsdaten vorhanden sind -->
-                        <form th:action="@{/admin/gruppen/{gid}/studenten/{sid}/loeschen(gid=${gruppe.id},sid=${student.id})}"
-                              method="post"
-                              onsubmit="return confirm('Diesen Studenten wirklich löschen? Das geht nur, solange keine Anwesenheitsdaten vorhanden sind.');">
-                            <button type="submit" class="btn btn-danger">Löschen</button>
-                        </form>
-                    </div>
-                </td>
-            </tr>
-            </tbody>
-        </table>
+<div layout:fragment="content" class="stack">
+    <div class="page-head">
+        <div class="page-head__main">
+            <nav class="breadcrumb" aria-label="Pfad">
+                <a th:href="@{/admin/gruppen}">Gruppen verwalten</a>
+                <span class="breadcrumb__sep">/</span>
+                <span th:text="${gruppe.bezeichnung}">Gruppe</span>
+            </nav>
+            <h1 class="page-head__title">Studenten</h1>
+            <p class="page-head__text">Deaktivierte Studenten erscheinen nicht mehr im Erfassungsformular, ihre Anwesenheitsdaten bleiben erhalten.</p>
+        </div>
     </div>
 
-    <h3>Student hinzufügen</h3>
-    <form th:action="@{/admin/gruppen/{id}/studenten(id=${gruppe.id})}" method="post" class="benutzer-form">
-        <div class="form-group">
-            <label for="vorname">Vorname</label>
-            <input type="text" id="vorname" name="vorname" required>
+    <div class="card empty" th:if="${studenten.empty}">
+        <h2 class="empty__title">Noch keine Studenten</h2>
+        <p class="muted">Fügen Sie unten den ersten Studenten hinzu.</p>
+    </div>
+
+    <div class="card" th:unless="${studenten.empty}">
+        <div class="table-scroll">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Vorname, Nachname und Gruppe</th>
+                    <th>Status</th>
+                    <th class="table__actions"><span class="visually-hidden">Aktionen</span></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="student : ${studenten}" th:classappend="${student.aktiv} ? '' : 'inaktiv'">
+                    <td>
+                        <form th:action="@{/admin/gruppen/{gid}/studenten/{sid}(gid=${gruppe.id},sid=${student.id})}"
+                              method="post" class="inline-form">
+                            <input type="text" name="vorname" class="input" required th:value="${student.vorname}" aria-label="Vorname">
+                            <input type="text" name="name" class="input" required th:value="${student.name}" aria-label="Nachname">
+                            <select name="gruppeId" class="select" aria-label="Gruppe">
+                                <option th:each="g : ${alleGruppen}" th:value="${g.id}" th:text="${g.bezeichnung}"
+                                        th:selected="${g.id == gruppe.id}">Gruppe</option>
+                            </select>
+                            <button type="submit" class="btn btn--secondary">Speichern</button>
+                        </form>
+                    </td>
+                    <td>
+                        <span th:if="${student.aktiv}" class="badge">Aktiv</span>
+                        <span th:unless="${student.aktiv}" class="inaktiv-hinweis"
+                              th:text="|Deaktiviert seit ${#temporals.format(student.deaktiviertAm, 'dd.MM.yyyy')}|">Deaktiviert</span>
+                    </td>
+                    <td class="table__actions">
+                        <div class="inline-form inline-form--end">
+                            <form th:if="${student.aktiv}"
+                                  th:action="@{/admin/gruppen/{gid}/studenten/{sid}/deaktivieren(gid=${gruppe.id},sid=${student.id})}"
+                                  method="post" class="inline-form">
+                                <button type="submit" class="btn btn--secondary">Deaktivieren</button>
+                            </form>
+                            <form th:unless="${student.aktiv}"
+                                  th:action="@{/admin/gruppen/{gid}/studenten/{sid}/reaktivieren(gid=${gruppe.id},sid=${student.id})}"
+                                  method="post" class="inline-form">
+                                <button type="submit" class="btn btn--secondary">Reaktivieren</button>
+                            </form>
+                            <!-- Löschen ist nur möglich, solange keine Anwesenheitsdaten vorhanden sind -->
+                            <form th:action="@{/admin/gruppen/{gid}/studenten/{sid}/loeschen(gid=${gruppe.id},sid=${student.id})}"
+                                  method="post" class="inline-form"
+                                  onsubmit="return confirm('Diesen Studenten wirklich löschen? Das geht nur, solange keine Anwesenheitsdaten vorhanden sind.');">
+                                <button type="submit" class="btn btn--danger">Löschen</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
-        <div class="form-group">
-            <label for="name">Nachname</label>
-            <input type="text" id="name" name="name" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Student hinzufügen</button>
-    </form>
+    </div>
+
+    <section class="card card--padded stack">
+        <h2 class="section-title">Student hinzufügen</h2>
+        <form th:action="@{/admin/gruppen/{id}/studenten(id=${gruppe.id})}" method="post" class="form-grid">
+            <div class="field">
+                <label class="label" for="vorname">Vorname</label>
+                <input type="text" class="input" id="vorname" name="vorname" required>
+            </div>
+            <div class="field">
+                <label class="label" for="name">Nachname</label>
+                <input type="text" class="input" id="name" name="name" required>
+            </div>
+            <div class="form-grid__actions">
+                <button type="submit" class="btn btn--primary">Student hinzufügen</button>
+            </div>
+        </form>
+    </section>
 </div>
 </body>
 </html>

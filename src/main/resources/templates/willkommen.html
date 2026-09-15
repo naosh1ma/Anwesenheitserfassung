@@ -1,50 +1,24 @@
 <!DOCTYPE html>
-<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<html lang="de" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Willkommen - Erfassung</title>
-    <link rel="stylesheet" th:href="@{/css/styles.css}">
-    <link rel="icon" th:href="@{/images/logo.png}" type="image/png">
+    <title>Willkommen</title>
 </head>
 <body>
-
-<div class="container">
-    <header class="header">
-        <h1>Willkommen, <span th:text="${username}">Benutzer</span>!</h1>
-        <div class="user-info">
-            <span th:if="${isAdmin}" class="role-badge admin">Administrator</span>
-            <span th:unless="${isAdmin}" class="role-badge teacher">Lehrer</span>
-            <form th:action="@{/logout}" method="post" class="logout-form">
-                <button type="submit" class="logout-link">Abmelden</button>
-            </form>
+<div layout:fragment="content" class="stack">
+    <div class="page-head">
+        <div class="page-head__main">
+            <h1 class="page-head__title" th:text="|Willkommen, ${username}|">Willkommen</h1>
+            <p class="page-head__text">Erfassen Sie die Anwesenheit Ihrer Gruppen und sehen Sie Monatsübersichten und Statistiken ein.</p>
         </div>
-    </header>
+    </div>
 
-    <main class="main-content">
-        <div class="welcome-message">
-            <h2>Anwesenheitserfassung System</h2>
-            <p>Willkommen im Anwesenheitserfassungssystem. Hier können Sie die Anwesenheit von Studenten verwalten und Statistiken einsehen.</p>
-        </div>
-
-        <div class="action-buttons">
-            <a th:href="@{/gruppen}" class="btn btn-primary">
-                <span class="icon">📚</span>
-                Gruppen verwalten
-            </a>
-
-            <a th:if="${isAdmin}" th:href="@{/admin/gruppen}" class="btn btn-secondary">
-                <span class="icon">🗂️</span>
-                Gruppen und Studenten verwalten
-            </a>
-
-            <a th:if="${isAdmin}" th:href="@{/admin/benutzer}" class="btn btn-secondary">
-                <span class="icon">👥</span>
-                Benutzer verwalten
-            </a>
-        </div>
-    </main>
+    <div class="page-head__actions">
+        <a th:href="@{/gruppen}" class="btn btn--primary btn--lg">Zu den Gruppen</a>
+        <a th:if="${isAdmin}" th:href="@{/admin/gruppen}" class="btn btn--secondary btn--lg">Gruppen und Studenten verwalten</a>
+        <a th:if="${isAdmin}" th:href="@{/admin/benutzer}" class="btn btn--secondary btn--lg">Benutzer verwalten</a>
+    </div>
 </div>
-
 </body>
 </html>

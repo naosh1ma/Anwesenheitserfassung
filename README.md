@@ -50,11 +50,12 @@ H2 wird automatisch für Tests verwendet - keine manuelle Einrichtung erforderli
 ### 3. Anwendung konfigurieren
 
 #### Entwicklungsumgebung
-Die Anwendung verwendet standardmäßig das `dev` Profil. Die Konfiguration befindet sich in `src/main/resources/application-dev.properties`.
+Für die Entwicklung aktivieren Sie das `dev` Profil. Standardmäßig ist kein Profil aktiv, ohne Profil startet die Anwendung nicht. Die Konfiguration befindet sich in `src/main/resources/application-dev.properties`.
 Das Datenbank-Passwort wird nicht im Repository gespeichert, sondern über Umgebungsvariablen gesetzt
 (z. B. in der IntelliJ-Run-Configuration):
 
 ```bash
+export SPRING_PROFILES_ACTIVE=dev
 export DB_PASSWORD=your_secure_password
 # Optional, falls abweichend von den Standardwerten
 export DB_URL=jdbc:mariadb://localhost:3306/anwesenheit
@@ -74,12 +75,12 @@ export DB_PASSWORD=your_secure_password
 ### 4. Anwendung starten
 
 ```bash
-# Mit Maven
-./mvnw spring-boot:run
+# Mit Maven (Entwicklung)
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 
-# Oder mit Java
+# Oder mit Java (Produktion)
 ./mvnw clean package
-java -jar target/erfassung-0.0.1-SNAPSHOT.jar
+java -jar target/erfassung-0.0.1-SNAPSHOT.jar --spring.profiles.active=prod
 ```
 
 Die Anwendung ist dann unter `http://localhost:8080` erreichbar.
@@ -169,10 +170,8 @@ src/
 ./mvnw clean compile
 ```
 
-### Anwendung mit Tests starten
-```bash
-./mvnw spring-boot:run -Dspring.profiles.active=test
-```
+### Automatische Tests (GitHub Actions)
+Bei jedem Push und Pull Request auf `master` baut GitHub Actions das Projekt und führt alle Tests aus (`.github/workflows/ci.yml`). Die Tests verwenden die H2-In-Memory-Datenbank, eine MariaDB ist dafür nicht nötig.
 
 ## Sicherheit
 

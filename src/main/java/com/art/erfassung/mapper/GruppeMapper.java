@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Mapper-Klasse zur Konvertierung zwischen Gruppe-Entitäten und DTOs.
+ * Mapper-Klasse zur Konvertierung von Gruppe-Entitäten in DTOs.
  * <p>
  * Diese Klasse stellt Methoden bereit, um Gruppe-Entitäten in GruppeDTO-Objekte
- * und umgekehrt zu konvertieren. Sie wird verwendet, um die Trennung zwischen
+ * zu konvertieren. Sie wird verwendet, um die Trennung zwischen
  * Präsentationsschicht und Datenzugriffsschicht zu gewährleisten.
  * </p>
  */
@@ -36,23 +36,6 @@ public class GruppeMapper {
     }
 
     /**
-     * Konvertiert ein GruppeDTO-Objekt in eine Gruppe-Entität.
-     *
-     * @param dto das zu konvertierende GruppeDTO-Objekt
-     * @return die resultierende Gruppe-Entität
-     */
-    public Gruppe toEntity(GruppeDTO dto) {
-        if (dto == null) {
-            return null;
-        }
-
-        Gruppe gruppe = new Gruppe();
-        gruppe.setId(dto.getId());
-        gruppe.setBezeichnung(dto.getBezeichnung());
-        return gruppe;
-    }
-
-    /**
      * Konvertiert eine Liste von Gruppe-Entitäten in eine Liste von GruppeDTO-Objekten.
      *
      * @param gruppen die zu konvertierende Liste von Gruppe-Entitäten
@@ -65,22 +48,6 @@ public class GruppeMapper {
 
         return gruppen.stream()
                 .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Konvertiert eine Liste von GruppeDTO-Objekten in eine Liste von Gruppe-Entitäten.
-     *
-     * @param dtos die zu konvertierende Liste von GruppeDTO-Objekten
-     * @return die resultierende Liste von Gruppe-Entitäten
-     */
-    public List<Gruppe> toEntityList(List<GruppeDTO> dtos) {
-        if (dtos == null) {
-            return null;
-        }
-
-        return dtos.stream()
-                .map(this::toEntity)
                 .collect(Collectors.toList());
     }
 }

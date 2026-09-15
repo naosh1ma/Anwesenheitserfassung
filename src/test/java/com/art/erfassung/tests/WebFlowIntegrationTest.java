@@ -113,6 +113,22 @@ public class WebFlowIntegrationTest {
     }
 
     @Test
+    public void testWrongHttpMethod_ShowsErrorPageWith405() throws Exception {
+        mockMvc.perform(post("/gruppen").with(teacher()).with(csrf()))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(view().name("error"))
+                .andExpect(content().string(containsString("auf diesem Weg nicht möglich")));
+    }
+
+    @Test
+    public void testInvalidValueInUrl_ShowsErrorPageWith400() throws Exception {
+        mockMvc.perform(get("/anwesenheit/abc").with(teacher()))
+                .andExpect(status().isBadRequest())
+                .andExpect(view().name("error"))
+                .andExpect(content().string(containsString("Anfrage war ungültig")));
+    }
+
+    @Test
     public void testAnwesenheitForm_PreselectsAnwesend() throws Exception {
         // Act
         String html = render(get("/anwesenheit/{id}", gruppe.getId()));

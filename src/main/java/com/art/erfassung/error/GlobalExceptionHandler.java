@@ -6,11 +6,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.ui.Model;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.format.DateTimeParseException;
@@ -76,8 +80,24 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public String handleNoResourceFoundException(NoResourceFoundException ex, Model model) {
         logger.debug("Seite oder Datei nicht gefunden: {}", ex.getResourcePath());
-        model.addAttribute("errorMessage", "Die angeforderte Seite wurde nicht gefunden.");
-        model.addAttribute("errorType", "not_found");
+        model.addAttribute("errorMessage", FehlerMeldungen.meldung(404));
+        model.addAttribute("errorType", FehlerMeldungen.typ(404));
+        return "error";
+    }
+
+    /**
+     * Behandelt MethodArgumentTypeMismatchException - ungültiger Wert in der Adresse, z. B. "/anwesenheit/abc".
+     *
+     * @param ex die ausgelöste MethodArgumentTypeMismatchException
+     * @param model das Model für die View
+     * @return den Namen der Fehlerseite
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex, Model model) {
+        logger.warn("Ungültiger Wert für '{}': {}", ex.getName(), ex.getValue());
+        model.addAttribute("errorMessage", FehlerMeldungen.meldung(400));
+        model.addAttribute("errorType", FehlerMeldungen.typ(400));
         return "error";
     }
 
@@ -143,24 +163,38 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.FORBIDDEN)
     public String handleAccessDeniedException(AccessDeniedException ex, Model model) {
         logger.warn("Zugriff verweigert: {}", ex.getMessage());
-        model.addAttribute("errorMessage", "Sie haben keine Berechtigung für diese Aktion.");
-        model.addAttribute("errorType", "access_denied");
+        model.addAttribute("errorMessage", FehlerMeldungen.meldung(403));
+        model.addAttribute("errorType", FehlerMeldungen.typ(403));
         return "error";
     }
 
     /**
-     * Behandelt alle weiteren, unerwarteten Exceptions.
+     * Behandelt alle weiteren Exceptions.
+     * <p>
+     * Anfragefehler, die Spring selbst erkennt (z. B. falsche HTTP-Methode oder fehlender Parameter),
+     * behalten ihren HTTP-Status und werden nur als Warnung protokolliert. Alles andere ist ein
+     * unerwarteter Fehler (Status 500).
+     * </p>
      *
      * @param ex die ausgelöste Exception
-     * @param model das Model für die View
-     * @return den Namen der Fehlerseite
+     * @return die Fehlerseite mit passendem HTTP-Status
      */
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String handleException(Exception ex, Model model) {
+    public ModelAndView handleException(Exception ex) {
+        if (ex instanceof ErrorResponse errorResponse) {
+            int status = errorResponse.getStatusCode().value();
+            logger.warn("Ungültige Anfrage ({}): {}", status, ex.getMessage());
+            return fehlerseite(status);
+        }
         logger.error("Ein unerwarteter Fehler ist aufgetreten: {}", ex.getMessage(), ex);
-        model.addAttribute("errorMessage", "Ein unerwarteter Fehler ist aufgetreten. Bitte kontaktieren Sie den Administrator.");
-        model.addAttribute("errorType", "internal");
-        return "error";
+        return fehlerseite(HttpStatus.INTERNAL_SERVER_ERROR.value());
+    }
+
+    private static ModelAndView fehlerseite(int status) {
+        ModelAndView fehlerseite = new ModelAndView("error");
+        fehlerseite.addObject("errorMessage", FehlerMeldungen.meldung(status));
+        fehlerseite.addObject("errorType", FehlerMeldungen.typ(status));
+        fehlerseite.setStatus(HttpStatusCode.valueOf(status));
+        return fehlerseite;
     }
 }

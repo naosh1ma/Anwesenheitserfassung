@@ -138,10 +138,32 @@ Das Datenbankschema wird mit Flyway verwaltet. Die Migrationen liegen in `src/ma
 | V3 | Spalten `erfassung.ankunftszeit` und `erfassung.verlassen_um`, Kommentare bis 500 Zeichen |
 | V4 | Status-Werte „Anwesend“, „Entschuldigt“, „Unentschuldigt“ und „Krankmeldung“ |
 | V5 | Spalte `studenten.deaktiviert_am` (leer bedeutet aktiv) |
+| V6 | Höchstens eine Erfassung pro Student und Tag (Unique-Constraint `uk_erfassung_student_datum`) |
 
-**Bestehende Datenbanken**: Beim ersten Start mit Flyway wird eine bereits vorhandene Datenbank als Version 1 markiert, danach laufen V2 bis V5. Diese Migrationen prüfen selbst, ob Spalten und Status-Werte schon vorhanden sind. Sie funktionieren daher für ältere Datenbanken ebenso wie für Datenbanken, in denen frühere Versionen die Spalten bereits angelegt haben. Legen Sie vor dem ersten Start trotzdem eine Sicherung an.
+**Bestehende Datenbanken**: Beim ersten Start mit Flyway wird eine bereits vorhandene Datenbank als Version 1 markiert, danach laufen V2 bis V6. Die Migrationen V2 bis V5 prüfen selbst, ob Spalten und Status-Werte schon vorhanden sind. Sie funktionieren daher für ältere Datenbanken ebenso wie für Datenbanken, in denen frühere Versionen die Spalten bereits angelegt haben. Legen Sie vor dem ersten Start trotzdem eine Sicherung an.
 
-**Schema ändern**: Änderungen immer als neue Migration anlegen (z. B. `V6__beschreibung.sql`). Bereits ausgeführte Migrationen dürfen nicht nachträglich geändert werden.
+**Schema ändern**: Änderungen immer als neue Migration anlegen (z. B. `V7__beschreibung.sql`). Bereits ausgeführte Migrationen dürfen nicht nachträglich geändert werden.
+
+### Doppelte Erfassungen (V6)
+
+Ab V6 erlaubt die Datenbank höchstens eine Erfassung pro Student und Tag. Enthält eine bestehende Datenbank bereits doppelte Erfassungen, bricht die Migration ab und die Anwendung startet nicht. Es wird nichts automatisch gelöscht. Die Fehlermeldung von MariaDB nennt den ersten doppelten Eintrag, z. B. `Duplicate entry '12-2026-09-01' for key 'uk_erfassung_student_datum'` (Studenten-ID und Datum).
+
+So beheben Sie das:
+
+1. Doppelte Erfassungen anzeigen:
+   ```sql
+   SELECT e.*
+   FROM erfassung e
+   JOIN (SELECT studenten_id, datum FROM erfassung GROUP BY studenten_id, datum HAVING COUNT(*) > 1) d
+     ON e.studenten_id = d.studenten_id AND e.datum = d.datum
+   ORDER BY e.studenten_id, e.datum, e.id;
+   ```
+2. Pro Student und Tag entscheiden, welche Erfassung gilt, und die übrigen löschen, z. B. `DELETE FROM erfassung WHERE id = 123;`
+3. Den fehlgeschlagenen Migrationsversuch entfernen. MariaDB kann Schemaänderungen nicht zurückrollen, deshalb merkt sich Flyway den Fehlschlag und würde sonst nicht erneut starten:
+   ```sql
+   DELETE FROM flyway_schema_history WHERE success = 0;
+   ```
+4. Die Anwendung neu starten. V6 wird dann angewendet.
 
 ## Gruppen und Studenten verwalten
 

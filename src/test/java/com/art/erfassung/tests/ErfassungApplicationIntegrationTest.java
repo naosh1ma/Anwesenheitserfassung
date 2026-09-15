@@ -1,8 +1,10 @@
 package com.art.erfassung.tests;
 
+import com.art.erfassung.model.Erfassung;
 import com.art.erfassung.model.Gruppe;
 import com.art.erfassung.model.Status;
 import com.art.erfassung.model.Studenten;
+import com.art.erfassung.repository.ErfassungRepository;
 import com.art.erfassung.repository.GruppeRepository;
 import com.art.erfassung.repository.StatusRepository;
 import com.art.erfassung.repository.StudentenRepository;
@@ -10,8 +12,10 @@ import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,6 +40,9 @@ public class ErfassungApplicationIntegrationTest {
 
     @Autowired
     private StatusRepository statusRepository;
+
+    @Autowired
+    private ErfassungRepository erfassungRepository;
 
     @Test
     public void testGruppeRepository_SaveAndFind() {
@@ -143,5 +150,22 @@ public class ErfassungApplicationIntegrationTest {
         assertEquals(2, gruppen.size());
         assertTrue(gruppen.stream().anyMatch(g -> g.getBezeichnung().equals("Gruppe 1")));
         assertTrue(gruppen.stream().anyMatch(g -> g.getBezeichnung().equals("Gruppe 2")));
+    }
+
+    @Test
+    public void testErfassungRepository_SecondRecordForSameStudentAndDay_IsRejected() {
+        // Arrange
+        Gruppe gruppe = gruppeRepository.save(new Gruppe("Test Gruppe"));
+        Studenten student = studentenRepository.save(new Studenten("Mustermann", "Max", gruppe));
+        Status anwesend = statusRepository.findByBezeichnung("Anwesend").orElseThrow();
+        LocalDate tag = LocalDate.of(2026, 9, 1);
+        erfassungRepository.save(new Erfassung(student, tag, anwesend, null));
+        entityManager.flush();
+
+        // Act & Assert: the unique constraint from migration V6 rejects a second record for the same day
+        assertThrows(DataIntegrityViolationException.class, () -> {
+            erfassungRepository.save(new Erfassung(student, tag, anwesend, "Doppelt"));
+            entityManager.flush();
+        });
     }
 }

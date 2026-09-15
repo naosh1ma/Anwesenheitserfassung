@@ -13,7 +13,9 @@ import java.time.LocalTime;
  * </p>
  */
 @Entity
-@Table(name = "erfassung")
+// Höchstens eine Erfassung pro Student und Tag (Flyway-Migration V6)
+@Table(name = "erfassung",
+        uniqueConstraints = @UniqueConstraint(name = "uk_erfassung_student_datum", columnNames = {"studenten_id", "datum"}))
 public class Erfassung {
 
     @Id
